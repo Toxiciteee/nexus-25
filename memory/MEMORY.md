@@ -1,0 +1,3 @@
+- [Project: CHU Constantine Toxicology App](project_chu_tox.md) — Next.js + Supabase lab management app; Chef de Service = Mme Benboudiaf Sabah
+- [Supabase Project](reference_supabase.md) — Project ID: ofwarhaldvuocxqmddyz
+- [Domain Rules — Workflow & Cloisonnement](project_domain_rules.md) — 4-tier validation; patients bound to one unit; cross-unit read-only access
