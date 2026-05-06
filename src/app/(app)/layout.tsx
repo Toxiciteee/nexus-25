@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { LayoutDashboard, Users, Settings, LogOut, KeyRound } from "lucide-react";
+import { LayoutDashboard, Users, Settings, KeyRound, History } from "lucide-react";
 import { requirePersonnel, ROLE_LABELS } from "@/lib/auth/rbac";
-import { signOut } from "@/app/login/actions";
 import { createClient } from "@/lib/supabase/server";
 import { fullName } from "@/lib/format";
 import { LogoBadge } from "@/components/brand/logo";
 import { SidebarNavLink, PageFade } from "./shell-client";
+import { LogoutButton } from "./logout-button";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const personnel = await requirePersonnel();
@@ -26,7 +26,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     { href: "/patients", label: "Patients", icon: Users },
   ];
   if (isChef) {
-    navItems.push({ href: "/admin", label: "Administration", icon: Settings });
+    navItems.push(
+      { href: "/logs", label: "Journal d'audit", icon: History },
+      { href: "/admin", label: "Administration", icon: Settings },
+    );
   }
 
   return (
@@ -53,7 +56,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </nav>
 
         <div className="p-3 border-t">
-          <div className="rounded-xl bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-100/80 p-3">
+          <div className="rounded-xl bg-gradient-to-br from-(--color-primary-50) to-(--color-secondary) border border-(--color-primary)/15 p-3">
             <div className="flex items-center gap-2.5 mb-2">
               <div className="h-8 w-8 rounded-full bg-(--color-primary) text-white flex items-center justify-center text-xs font-semibold shrink-0">
                 {personnel.prenom[0]}
@@ -67,7 +70,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 pt-1 mt-1 border-t border-sky-100/60">
+            <div className="flex items-center gap-3 pt-1 mt-1 border-t border-(--color-primary)/15">
               <Link
                 href="/account/password"
                 className="inline-flex items-center gap-1 text-[11px] text-(--color-muted-foreground) hover:text-(--color-foreground) transition-colors"
@@ -75,15 +78,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <KeyRound className="h-3 w-3" />
                 Mot de passe
               </Link>
-              <form action={signOut} className="ml-auto">
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-1 text-[11px] text-(--color-muted-foreground) hover:text-(--color-destructive) transition-colors"
-                >
-                  <LogOut className="h-3 w-3" />
-                  Déconnexion
-                </button>
-              </form>
+              <LogoutButton className="ml-auto text-[11px] text-(--color-muted-foreground) hover:text-(--color-destructive)">
+                Déconnexion
+              </LogoutButton>
             </div>
           </div>
         </div>
@@ -96,11 +93,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <LogoBadge size="sm" />
             <span className="font-semibold text-sm">Toxicologie</span>
           </div>
-          <form action={signOut}>
-            <button type="submit" className="text-(--color-muted-foreground)">
-              <LogOut className="h-4 w-4" />
-            </button>
-          </form>
+          <LogoutButton iconOnly className="text-(--color-muted-foreground)" />
         </header>
 
         <main className="flex-1 overflow-auto">

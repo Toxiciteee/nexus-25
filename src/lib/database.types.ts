@@ -329,7 +329,7 @@ export type Database = {
       role_personnel:
         | "secretaire"
         | "resident"
-        | "responsable_unite"
+        | "chef_unite"
         | "chef_service";
       statut_analyse:
         | "brouillon"

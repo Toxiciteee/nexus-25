@@ -1,15 +1,30 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Send, CheckCircle2, ShieldCheck, Undo2 } from "lucide-react";
+import { Send, CheckCircle2, ShieldCheck, Undo2, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import {
-  submitToUnit,
-  validateAtUnit,
-  validateAtChef,
+  submitToChefUnite,
+  validateChefUnite,
+  validateChefService,
   rejectAnalyse,
+  deleteAnalyse,
 } from "./actions";
 import type { StatutAnalyse, RolePersonnel } from "@/lib/database.types";
+
+type ActionFn = () => Promise<{ error?: string; success?: string }>;
+
+type Pending = {
+  fn: ActionFn;
+  title: string;
+  description: React.ReactNode;
+  confirmLabel: string;
+  tone: "default" | "danger" | "success";
+  icon: React.ReactNode;
+  redirectAfter?: string;
+} | null;
 
 export function WorkflowActions({
   analyseId,
@@ -22,60 +37,103 @@ export function WorkflowActions({
   personnelRole: RolePersonnel;
   isSameUnite: boolean;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [confirm, setConfirm] = useState<Pending>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const isChef = personnelRole === "chef_service";
   const sameUniteOrChef = isChef || isSameUnite;
 
-  const run = (fn: () => Promise<{ error?: string; success?: string }>) =>
+  const run = () => {
+    if (!confirm) return;
+    const c = confirm;
     startTransition(async () => {
       setError(null);
       setSuccess(null);
-      const r = await fn();
-      if (r.error) setError(r.error);
-      if (r.success) setSuccess(r.success);
+      const r = await c.fn();
+      if (r.error) {
+        setError(r.error);
+      } else {
+        setSuccess(r.success ?? "Action effectuée.");
+        setConfirm(null);
+        if (c.redirectAfter) router.push(c.redirectAfter);
+      }
     });
+  };
 
   const buttons: React.ReactNode[] = [];
 
-  if (statut === "brouillon" && (personnelRole === "secretaire" || isChef) && sameUniteOrChef) {
+  // Secrétaire / Chef Service en brouillon → soumettre à Chef d'unité
+  if (
+    statut === "brouillon" &&
+    (personnelRole === "secretaire" || isChef) &&
+    sameUniteOrChef
+  ) {
     buttons.push(
       <Button
         key="submit"
-        onClick={() => run(() => submitToUnit(analyseId))}
+        onClick={() =>
+          setConfirm({
+            fn: () => submitToChefUnite(analyseId),
+            title: "Envoyer au Chef d'unité ?",
+            description:
+              "Une fois soumis, vous ne pourrez plus modifier ce dossier. Vérifiez que tous les résultats sont saisis.",
+            confirmLabel: "Envoyer",
+            tone: "default",
+            icon: <Send className="h-5 w-5" />,
+          })
+        }
         disabled={pending}
         className="w-full"
       >
         <Send className="h-4 w-4" />
-        Soumettre à l'unité
+        Envoyer au Chef d'unité
       </Button>,
     );
   }
 
-  if (
-    statut === "attente_unite" &&
-    (personnelRole === "responsable_unite" || personnelRole === "resident" || isChef) &&
-    sameUniteOrChef
-  ) {
-    if (personnelRole === "responsable_unite" || isChef) {
-      buttons.push(
-        <Button
-          key="validate-unit"
-          onClick={() => run(() => validateAtUnit(analyseId))}
-          disabled={pending}
-          className="w-full"
-        >
-          <CheckCircle2 className="h-4 w-4" />
-          Valider et envoyer au Chef
-        </Button>,
-      );
-    }
+  // Chef d'unité (ou Chef Service) en attente_unite → valider et envoyer au Chef Service
+  if (statut === "attente_unite" && (personnelRole === "chef_unite" || isChef) && sameUniteOrChef) {
     buttons.push(
       <Button
+        key="validate-unit"
+        onClick={() =>
+          setConfirm({
+            fn: () => validateChefUnite(analyseId),
+            title: "Valider et transmettre au Chef de Service ?",
+            description: (
+              <>
+                Vous certifiez avoir vérifié les résultats de ce dossier. Il sera
+                ensuite transmis à <strong>Mme Benboudiaf Sabah</strong> pour
+                validation finale.
+              </>
+            ),
+            confirmLabel: "Valider et transmettre",
+            tone: "success",
+            icon: <CheckCircle2 className="h-5 w-5" />,
+          })
+        }
+        disabled={pending}
+        className="w-full"
+      >
+        <CheckCircle2 className="h-4 w-4" />
+        Valider et transmettre au Chef de Service
+      </Button>,
+      <Button
         key="reject"
-        onClick={() => run(() => rejectAnalyse(analyseId))}
+        onClick={() =>
+          setConfirm({
+            fn: () => rejectAnalyse(analyseId),
+            title: "Renvoyer en brouillon ?",
+            description:
+              "Le dossier repassera en brouillon et la secrétaire pourra le modifier.",
+            confirmLabel: "Renvoyer",
+            tone: "danger",
+            icon: <Undo2 className="h-5 w-5" />,
+          })
+        }
         disabled={pending}
         variant="outline"
         className="w-full"
@@ -86,20 +144,44 @@ export function WorkflowActions({
     );
   }
 
+  // Chef Service uniquement en attente_chef → validation finale
   if (statut === "attente_chef" && isChef) {
     buttons.push(
       <Button
         key="validate-chef"
-        onClick={() => run(() => validateAtChef(analyseId))}
+        onClick={() =>
+          setConfirm({
+            fn: () => validateChefService(analyseId),
+            title: "Validation finale et signature ?",
+            description: (
+              <>
+                Cette action signe et verrouille le dossier. Le rapport PDF sera
+                disponible pour impression. <strong>Action irréversible</strong>.
+              </>
+            ),
+            confirmLabel: "Signer et valider",
+            tone: "success",
+            icon: <ShieldCheck className="h-5 w-5" />,
+          })
+        }
         disabled={pending}
         className="w-full"
       >
         <ShieldCheck className="h-4 w-4" />
-        Validation finale & génération PDF
+        Validation finale & signature
       </Button>,
       <Button
         key="reject-chef"
-        onClick={() => run(() => rejectAnalyse(analyseId))}
+        onClick={() =>
+          setConfirm({
+            fn: () => rejectAnalyse(analyseId),
+            title: "Renvoyer en brouillon ?",
+            description: "Le dossier repassera à la secrétaire pour correction.",
+            confirmLabel: "Renvoyer",
+            tone: "danger",
+            icon: <Undo2 className="h-5 w-5" />,
+          })
+        }
         disabled={pending}
         variant="outline"
         className="w-full"
@@ -110,23 +192,66 @@ export function WorkflowActions({
     );
   }
 
-  if (buttons.length === 0) {
-    return (
-      <p className="text-sm text-(--color-muted-foreground)">
-        Aucune action disponible pour votre rôle à ce statut.
-      </p>
+  // Chef Service : suppression (toujours dispo)
+  if (isChef) {
+    buttons.push(
+      <Button
+        key="delete"
+        onClick={() =>
+          setConfirm({
+            fn: () => deleteAnalyse(analyseId),
+            title: "Supprimer ce dossier ?",
+            description: (
+              <>
+                Le dossier d'analyse sera <strong>définitivement supprimé</strong>,
+                ainsi que son historique. Cette action est irréversible.
+              </>
+            ),
+            confirmLabel: "Supprimer définitivement",
+            tone: "danger",
+            icon: <Trash2 className="h-5 w-5" />,
+            redirectAfter: "/dashboard",
+          })
+        }
+        disabled={pending}
+        variant="ghost"
+        className="w-full text-(--color-destructive) hover:bg-(--color-destructive)/10"
+      >
+        <Trash2 className="h-4 w-4" />
+        Supprimer le dossier
+      </Button>,
     );
   }
 
   return (
-    <div className="space-y-2">
-      {buttons}
-      {error && (
-        <p className="text-sm text-(--color-destructive)" role="alert">
-          {error}
-        </p>
-      )}
-      {success && <p className="text-sm text-(--color-success)">{success}</p>}
-    </div>
+    <>
+      <div className="space-y-2">
+        {buttons.length === 0 ? (
+          <p className="text-sm text-(--color-muted-foreground)">
+            Aucune action disponible pour votre rôle à ce statut.
+          </p>
+        ) : (
+          buttons
+        )}
+        {error && (
+          <p className="text-sm text-(--color-destructive)" role="alert">
+            {error}
+          </p>
+        )}
+        {success && <p className="text-sm text-(--color-success)">{success}</p>}
+      </div>
+
+      <ConfirmModal
+        open={!!confirm}
+        onClose={() => setConfirm(null)}
+        onConfirm={run}
+        title={confirm?.title ?? ""}
+        description={confirm?.description}
+        confirmLabel={confirm?.confirmLabel}
+        tone={confirm?.tone}
+        loading={pending}
+        icon={confirm?.icon}
+      />
+    </>
   );
 }

@@ -14,9 +14,9 @@ export default async function ResetPasswordPage({
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
-      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-sky-50 via-white to-blue-50" />
-      <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-sky-200/40 blur-3xl -z-10" />
-      <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-blue-200/40 blur-3xl -z-10" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-(--color-primary-50) via-(--color-background) to-(--color-primary-100)/60" />
+      <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-(--color-primary)/20 blur-3xl -z-10" />
+      <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-(--color-primary-200)/35 blur-3xl -z-10" />
 
       <div className="w-full max-w-md">
         <LoginCard>

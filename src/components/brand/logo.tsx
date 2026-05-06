@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Logo du Service de Toxicologie — flacon labo stylisé + goutte d'analyse.
- * SVG inline, sans dépendance externe, parfaitement net à toutes les tailles.
+ * Logo Service de Toxicologie — tête de mort stylisée (toxique/danger),
+ * ronde et lisse pour rester professionnelle et non morbide.
  */
 export function LogoMark({
   className,
@@ -19,12 +19,10 @@ export function LogoMark({
         : "#ffffff";
   const fill =
     variant === "white"
-      ? "rgba(255,255,255,0.15)"
+      ? "rgba(255,255,255,0.18)"
       : variant === "outline"
         ? "transparent"
-        : "rgba(255,255,255,0.18)";
-  const drop =
-    variant === "white" ? "#ffffff" : variant === "outline" ? "currentColor" : "#7dd3fc";
+        : "rgba(255,255,255,0.16)";
 
   return (
     <svg
@@ -34,27 +32,32 @@ export function LogoMark({
       className={cn("h-full w-full", className)}
       aria-hidden="true"
     >
-      {/* Flacon (goulot + corps) */}
+      {/* Crâne — calotte arrondie */}
       <path
-        d="M12 4h8M13 4v6.2L7.6 21.2A3 3 0 0 0 10.3 25.5h11.4a3 3 0 0 0 2.7-4.3L19 10.2V4"
-        stroke={stroke}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d="M16 4c-5.5 0-10 4-10 9.5 0 3 1.4 5.6 3.6 7.3v3.2c0 1.1.9 2 2 2H12v-2.5h1.5V26h2v-2.5h1V26h2v-2.5h1.5V26h.4c1.1 0 2-.9 2-2v-3.2c2.2-1.7 3.6-4.3 3.6-7.3C26 8 21.5 4 16 4z"
         fill={fill}
-      />
-      {/* Liquide */}
-      <path
-        d="M9.4 18h13.2"
         stroke={stroke}
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        opacity="0.7"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
       />
-      {/* Goutte d'analyse */}
-      <circle cx="16" cy="21" r="1.6" fill={drop} />
-      <circle cx="13.5" cy="22.8" r="0.9" fill={drop} opacity="0.7" />
-      <circle cx="18.8" cy="22.6" r="0.7" fill={drop} opacity="0.6" />
+      {/* Œil gauche */}
+      <ellipse cx="11.8" cy="14.2" rx="2.4" ry="2.6" fill={stroke} />
+      {/* Œil droit */}
+      <ellipse cx="20.2" cy="14.2" rx="2.4" ry="2.6" fill={stroke} />
+      {/* Nez (triangle inversé) */}
+      <path
+        d="M16 17.4 L14.6 19.6 L17.4 19.6 Z"
+        fill={stroke}
+        opacity="0.85"
+      />
+      {/* Sourire dentures (3 traits courts) */}
+      <path
+        d="M13.5 22 L13.5 23.4 M16 22 L16 23.4 M18.5 22 L18.5 23.4"
+        stroke={stroke}
+        strokeWidth="1"
+        strokeLinecap="round"
+        opacity="0.75"
+      />
     </svg>
   );
 }
@@ -73,8 +76,8 @@ export function LogoBadge({
       className={cn(
         dim,
         radius,
-        "bg-gradient-to-br from-(--color-primary) to-sky-500 text-white",
-        "flex items-center justify-center shadow-lg shadow-sky-500/20",
+        "bg-gradient-to-br from-(--color-primary) to-(--color-primary-700) text-white",
+        "flex items-center justify-center shadow-lg shadow-(--color-primary)/25",
         "ring-1 ring-white/30",
         className,
       )}
