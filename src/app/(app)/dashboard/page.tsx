@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Search, Plus, FileText, ClipboardList } from "lucide-react";
+import { Search, Plus, FileText, ClipboardList, FileEdit, ShieldCheck, Hourglass, BadgeCheck } from "lucide-react";
 import { requirePersonnel, ROLE_LABELS } from "@/lib/auth/rbac";
 import { createClient } from "@/lib/supabase/server";
 import { LinkButton } from "@/components/ui/link-button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { KpiCard } from "@/components/dashboard/kpi-card";
 import {
   Table,
   TableBody,
@@ -60,10 +61,34 @@ export default async function DashboardPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Brouillons" value={nbBrouillon ?? 0} variant="outline" />
-        <KpiCard label="En attente — Unité" value={nbAttenteUnite ?? 0} variant="warning" />
-        <KpiCard label="En attente — Chef" value={nbAttenteChef ?? 0} variant="warning" />
-        <KpiCard label="Validées" value={nbValide ?? 0} variant="success" />
+        <KpiCard
+          label="Brouillons"
+          value={nbBrouillon ?? 0}
+          variant="outline"
+          icon={<FileEdit className="h-8 w-8" />}
+          index={0}
+        />
+        <KpiCard
+          label="En attente — Unité"
+          value={nbAttenteUnite ?? 0}
+          variant="warning"
+          icon={<Hourglass className="h-8 w-8" />}
+          index={1}
+        />
+        <KpiCard
+          label="En attente — Chef"
+          value={nbAttenteChef ?? 0}
+          variant="warning"
+          icon={<ShieldCheck className="h-8 w-8" />}
+          index={2}
+        />
+        <KpiCard
+          label="Validées"
+          value={nbValide ?? 0}
+          variant="success"
+          icon={<BadgeCheck className="h-8 w-8" />}
+          index={3}
+        />
       </div>
 
       {/* Actions rapides */}
@@ -139,30 +164,6 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-function KpiCard({
-  label,
-  value,
-  variant,
-}: {
-  label: string;
-  value: number;
-  variant: "outline" | "warning" | "success";
-}) {
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <p className="text-sm text-(--color-muted-foreground)">{label}</p>
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-3xl font-semibold tabular-nums">{value}</span>
-          <Badge variant={variant} className="text-[10px]">
-            {variant === "success" ? "OK" : variant === "warning" ? "À traiter" : "Draft"}
-          </Badge>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
 

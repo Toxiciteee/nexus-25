@@ -114,6 +114,7 @@ export default async function AnalyseDetailPage({
             <CardContent>
               <ResultatsForm
                 analyseId={analyse.id}
+                uniteCode={analyse.unite?.code ?? null}
                 statut={analyse.statut}
                 resultats={(analyse.resultats ?? {}) as Record<string, unknown>}
                 conclusion={analyse.conclusion}

@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { inviteMember, ROLE_OPTIONS, type InviteState } from "./actions";
+import { inviteMember, type InviteState } from "./actions";
+import { ROLE_OPTIONS } from "./constants";
 import type { RolePersonnel } from "@/lib/database.types";
 
 type Unite = { id: string; code: string; nom: string };

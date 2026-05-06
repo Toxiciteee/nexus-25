@@ -5,8 +5,6 @@ import { z } from "zod";
 import { requireChef } from "@/lib/auth/rbac";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import type { RolePersonnel } from "@/lib/database.types";
-
 const InviteSchema = z
   .object({
     email: z.string().email("E-mail invalide"),
@@ -97,11 +95,3 @@ export async function setActif(personnelId: string, actif: boolean) {
   revalidatePath("/admin");
 }
 
-export type RoleOption = { value: RolePersonnel; label: string };
-
-export const ROLE_OPTIONS: RoleOption[] = [
-  { value: "secretaire", label: "Secrétaire" },
-  { value: "resident", label: "Résident·e" },
-  { value: "responsable_unite", label: "Responsable d'unité" },
-  { value: "chef_service", label: "Chef de Service" },
-];
