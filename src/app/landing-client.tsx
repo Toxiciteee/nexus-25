@@ -1,14 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "motion/react";
 import { ChevronRight, Activity, ShieldCheck } from "lucide-react";
 
 export function LandingHero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-dots opacity-60 -z-10" />
-      <div className="absolute inset-x-0 top-0 h-[600px] bg-gradient-to-b from-(--color-primary-50)/60 via-transparent to-transparent -z-10" />
+      {/* Photo Constantine en arrière-plan, fortement adoucie */}
+      <div className="absolute inset-0 -z-10">
+        <Image
+          src="/constantine/sidi-mcid.jpg"
+          alt=""
+          fill
+          priority
+          className="object-cover opacity-25"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-(--color-background)/85 via-(--color-background)/90 to-(--color-background)" />
+      </div>
+      <div className="absolute inset-0 bg-dots opacity-30 -z-10" />
+      <div className="absolute inset-x-0 top-0 h-[600px] bg-gradient-to-b from-(--color-primary-50)/40 via-transparent to-transparent -z-10" />
 
       <div className="max-w-6xl mx-auto px-6 lg:px-8 pt-20 pb-24 grid lg:grid-cols-2 gap-12 items-center">
         <div>

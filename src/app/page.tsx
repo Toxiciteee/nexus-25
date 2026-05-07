@@ -2,14 +2,13 @@ import Link from "next/link";
 import {
   ShieldCheck,
   Microscope,
-  ClipboardList,
   ChevronRight,
   Mail,
-  MapPin,
   Stethoscope,
 } from "lucide-react";
 import { LogoBadge } from "@/components/brand/logo";
 import { LandingHero, FadeIn } from "./landing-client";
+import { ConstantineShowcase } from "./landing-constantine";
 
 export default function LandingPage() {
   return (
@@ -111,37 +110,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CONSTANTINE */}
-      <section className="py-20 px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-          <FadeIn>
-            <p className="text-xs uppercase tracking-[0.2em] text-(--color-primary)/80 font-medium mb-3">
-              Constantine — la ville aux ponts suspendus
-            </p>
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight mb-4">
-              Au cœur du CHU Dr Benbadis.
-            </h2>
-            <p className="text-(--color-muted-foreground) leading-relaxed">
-              Le Service de Toxicologie est rattaché au Centre Hospitalier
-              Universitaire de Constantine, établissement de référence pour
-              l'Est algérien. Implanté dans la ville historique des ponts, il
-              accueille les demandes d'analyse provenant des hôpitaux,
-              dispensaires et instances judiciaires de la région.
-            </p>
-            <div className="mt-6 flex items-center gap-2 text-sm text-(--color-muted-foreground)">
-              <MapPin className="h-4 w-4" />
-              CHU de Constantine — Algérie
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={0.1}>
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-xl ring-1 ring-(--color-border)">
-              {/* Illustration vectorielle stylisée de Constantine (ponts suspendus) */}
-              <ConstantineIllustration />
-            </div>
-          </FadeIn>
-        </div>
-      </section>
+      {/* CONSTANTINE — galerie photo */}
+      <ConstantineShowcase />
 
       {/* CTA + footer */}
       <section id="contact" className="py-16 px-6 lg:px-8 border-t border-(--color-border)">
@@ -240,90 +210,3 @@ function UniteCard({
   );
 }
 
-function ConstantineIllustration() {
-  return (
-    <svg
-      viewBox="0 0 400 300"
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-full h-full"
-      preserveAspectRatio="xMidYMid slice"
-      role="img"
-      aria-label="Illustration stylisée de Constantine"
-    >
-      <defs>
-        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#f5f1e6" />
-          <stop offset="1" stopColor="#e9e5d2" />
-        </linearGradient>
-        <linearGradient id="rock" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#a8a07a" />
-          <stop offset="1" stopColor="#7d7556" />
-        </linearGradient>
-        <linearGradient id="hills" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#9aa86a" />
-          <stop offset="1" stopColor="#7e8a4f" />
-        </linearGradient>
-      </defs>
-
-      {/* Ciel */}
-      <rect width="400" height="300" fill="url(#sky)" />
-
-      {/* Soleil pâle */}
-      <circle cx="320" cy="60" r="34" fill="#f1e9c8" opacity="0.8" />
-
-      {/* Collines lointaines */}
-      <path
-        d="M0 195 Q 80 155 160 175 T 320 165 T 400 180 L 400 300 L 0 300 Z"
-        fill="url(#hills)"
-        opacity="0.55"
-      />
-      <path
-        d="M0 215 Q 90 180 200 195 T 400 200 L 400 300 L 0 300 Z"
-        fill="url(#hills)"
-        opacity="0.75"
-      />
-
-      {/* Falaises du Rhumel + Pont Sidi M'Cid */}
-      <path
-        d="M40 240 L 40 155 L 95 155 L 95 240 Z"
-        fill="url(#rock)"
-      />
-      <path
-        d="M280 240 L 280 165 L 360 165 L 360 240 Z"
-        fill="url(#rock)"
-      />
-      {/* Le pont (câbles + tablier) */}
-      <line x1="60" y1="100" x2="340" y2="100" stroke="#5e6b4a" strokeWidth="2.5" />
-      <line x1="95" y1="155" x2="280" y2="165" stroke="#43533c" strokeWidth="3" />
-      {/* Pylônes */}
-      <line x1="95" y1="100" x2="95" y2="155" stroke="#43533c" strokeWidth="3" />
-      <line x1="280" y1="100" x2="280" y2="165" stroke="#43533c" strokeWidth="3" />
-      {/* Câbles suspendus */}
-      <path
-        d="M95 100 Q 187 145 280 100"
-        fill="none"
-        stroke="#43533c"
-        strokeWidth="1.5"
-      />
-      {[120, 150, 180, 210, 240, 270].map((x) => (
-        <line
-          key={x}
-          x1={x}
-          y1={100 + Math.sin(((x - 95) / 185) * Math.PI) * 35}
-          x2={x}
-          y2="160"
-          stroke="#43533c"
-          strokeWidth="0.8"
-        />
-      ))}
-
-      {/* Bâtiments stylisés */}
-      <rect x="50" y="135" width="12" height="20" fill="#d4cba8" />
-      <rect x="65" y="125" width="14" height="30" fill="#bfb692" />
-      <rect x="83" y="140" width="10" height="15" fill="#d4cba8" />
-      <rect x="290" y="145" width="14" height="20" fill="#d4cba8" />
-      <rect x="308" y="135" width="16" height="30" fill="#bfb692" />
-      <rect x="328" y="148" width="12" height="17" fill="#d4cba8" />
-    </svg>
-  );
-}
