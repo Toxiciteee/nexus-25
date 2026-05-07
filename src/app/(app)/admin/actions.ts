@@ -10,15 +10,17 @@ const InviteSchema = z
     email: z.string().email("E-mail invalide"),
     nom: z.string().trim().min(1, "Nom requis"),
     prenom: z.string().trim().min(1, "Prénom requis"),
-    role: z.enum(["secretaire", "chef_unite", "chef_service"]),
+    // Le Chef de Service ne peut PAS inviter un autre Chef de Service —
+    // il est l'unique compte de ce rôle. Seuls les rôles subordonnés sont
+    // invitables via le formulaire.
+    role: z.enum(["secretaire", "chef_unite"]),
     unite_id: z.string().uuid().optional().nullable(),
   })
-  .refine(
-    (v) =>
-      (v.role === "chef_service" && !v.unite_id) ||
-      (v.role !== "chef_service" && !!v.unite_id),
-    { message: "Unité requise pour ce rôle.", path: ["unite_id"] },
-  );
+  // Tous les rôles invitables (secretaire, chef_unite) sont rattachés à une unité.
+  .refine((v) => !!v.unite_id, {
+    message: "Unité requise pour ce rôle.",
+    path: ["unite_id"],
+  });
 
 export type InviteState = { error?: string; success?: string } | undefined;
 

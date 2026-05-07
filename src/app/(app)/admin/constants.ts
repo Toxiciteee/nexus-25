@@ -3,7 +3,12 @@ import type { RolePersonnel } from "@/lib/database.types";
 export type RoleOption = { value: RolePersonnel; label: string; description: string };
 
 /**
- * 3 rôles seulement (resident est déprécié et n'apparaît plus dans le formulaire).
+ * Rôles invitables par le Chef de Service via le formulaire d'admin.
+ *
+ * Important : `chef_service` n'est PAS proposé.
+ * Il n'y a qu'un seul Chef de Service (Mme Benboudiaf Sabah) ; ce compte est
+ * créé manuellement en base. Le formulaire ne permet d'inviter que les rôles
+ * subordonnés.
  */
 export const ROLE_OPTIONS: RoleOption[] = [
   {
@@ -17,11 +22,5 @@ export const ROLE_OPTIONS: RoleOption[] = [
     label: "Chef d'unité",
     description:
       "Valide les dossiers de son unité et les transmet au Chef de Service.",
-  },
-  {
-    value: "chef_service",
-    label: "Chef de Service",
-    description:
-      "Super-administrateur : peut tout créer, modifier, valider, supprimer.",
   },
 ];
