@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { requireChef } from "@/lib/auth/rbac";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -53,7 +54,15 @@ export async function inviteMember(
     };
   }
 
-  // 1) Invitation Supabase Auth (envoie un mail de magic-link)
+  // Calcule l'URL de retour absolue à partir des en-têtes de la requête.
+  // Le mail d'invitation pointera vers cette page (et non vers l'URL Supabase
+  // par défaut) — l'utilisateur arrivera sur notre page d'accueil "Bienvenue".
+  const h = await headers();
+  const proto = h.get("x-forwarded-proto") ?? "http";
+  const host = h.get("host") ?? "localhost:3000";
+  const redirectTo = `${proto}://${host}/auth/accept-invite`;
+
+  // 1) Invitation Supabase Auth (envoie le mail avec lien magique → redirectTo)
   const { data: invited, error: inviteError } =
     await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
       data: {
@@ -61,6 +70,7 @@ export async function inviteMember(
         prenom: parsed.data.prenom,
         role: parsed.data.role,
       },
+      redirectTo,
     });
   if (inviteError) return { error: inviteError.message };
   if (!invited.user) return { error: "Aucun utilisateur créé." };

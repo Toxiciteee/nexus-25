@@ -1,0 +1,244 @@
+<!--
+  Template HTML d'invitation pour le Service de Toxicologie — CHU Constantine.
+
+  À installer dans Supabase :
+    1. Dashboard → Authentication → Email Templates → "Invite user"
+    2. Désactivez le template par défaut (toggle "Use default")
+    3. Collez le HTML ci-dessous dans la zone "Message"
+    4. Sujet recommandé : "Invitation — Service de Toxicologie CHU Constantine"
+
+  Variables Supabase utilisées :
+    {{ .ConfirmationURL }}  → lien magique vers /auth/accept-invite
+    {{ .Email }}            → adresse e-mail du destinataire
+    {{ .Data.prenom }}      → prénom (passé via metadata `data:` dans l'invite)
+    {{ .Data.nom }}         → nom
+    {{ .Data.role }}        → "secretaire" ou "chef_unite"
+-->
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Invitation — Service de Toxicologie CHU Constantine</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #f6f5ee;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        Helvetica, Arial, sans-serif;
+      color: #2a2f23;
+    "
+  >
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style="background: #f6f5ee; padding: 32px 16px"
+    >
+      <tr>
+        <td align="center">
+          <table
+            role="presentation"
+            width="560"
+            cellpadding="0"
+            cellspacing="0"
+            style="
+              max-width: 560px;
+              background: #ffffff;
+              border-radius: 14px;
+              overflow: hidden;
+              box-shadow: 0 4px 24px rgba(126, 138, 79, 0.08);
+            "
+          >
+            <!-- Bandeau haut olive -->
+            <tr>
+              <td
+                style="
+                  background: linear-gradient(135deg, #8a9760, #5e6b3a);
+                  padding: 28px 32px;
+                  color: #ffffff;
+                "
+              >
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td>
+                      <!-- Logo skull stylisé -->
+                      <div
+                        style="
+                          display: inline-block;
+                          width: 44px;
+                          height: 44px;
+                          background: rgba(255, 255, 255, 0.18);
+                          border: 1px solid rgba(255, 255, 255, 0.3);
+                          border-radius: 12px;
+                          line-height: 44px;
+                          text-align: center;
+                          font-size: 22px;
+                          vertical-align: middle;
+                        "
+                      >
+                        ☠
+                      </div>
+                      <span
+                        style="
+                          margin-left: 12px;
+                          font-size: 17px;
+                          font-weight: 600;
+                          letter-spacing: 0.2px;
+                          vertical-align: middle;
+                        "
+                        >Service de Toxicologie</span
+                      >
+                      <div
+                        style="
+                          margin-top: 4px;
+                          margin-left: 56px;
+                          font-size: 12px;
+                          opacity: 0.85;
+                        "
+                      >
+                        CHU Constantine
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Corps -->
+            <tr>
+              <td style="padding: 36px 36px 8px 36px">
+                <h1
+                  style="
+                    font-size: 22px;
+                    font-weight: 600;
+                    margin: 0 0 12px 0;
+                    color: #2a2f23;
+                  "
+                >
+                  Bonjour {{ .Data.prenom }},
+                </h1>
+                <p style="font-size: 15px; line-height: 1.65; margin: 0 0 16px 0; color: #4a5340;">
+                  Vous avez été invité·e par le <strong>Chef de Service</strong>
+                  à rejoindre la plateforme de gestion des analyses
+                  toxicologiques du <strong>CHU&nbsp;Constantine</strong>.
+                </p>
+                <p style="font-size: 15px; line-height: 1.65; margin: 0 0 24px 0; color: #4a5340;">
+                  Cliquez sur le bouton ci-dessous pour <strong>activer votre
+                  compte</strong> et choisir votre mot de passe. Le lien est
+                  valable pendant 24&nbsp;heures.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Bouton CTA -->
+            <tr>
+              <td align="center" style="padding: 0 36px 28px 36px">
+                <a
+                  href="{{ .ConfirmationURL }}"
+                  style="
+                    display: inline-block;
+                    background: #7e8a4f;
+                    color: #ffffff !important;
+                    text-decoration: none;
+                    padding: 14px 32px;
+                    border-radius: 10px;
+                    font-size: 15px;
+                    font-weight: 600;
+                    box-shadow: 0 4px 12px rgba(126, 138, 79, 0.3);
+                  "
+                  >Activer mon compte</a
+                >
+              </td>
+            </tr>
+
+            <!-- Carte info -->
+            <tr>
+              <td style="padding: 0 36px 32px 36px">
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  style="
+                    background: #f9f8ec;
+                    border: 1px solid #e6e3c8;
+                    border-radius: 10px;
+                  "
+                >
+                  <tr>
+                    <td style="padding: 16px 18px">
+                      <p
+                        style="
+                          margin: 0 0 6px 0;
+                          font-size: 11px;
+                          font-weight: 600;
+                          letter-spacing: 1.2px;
+                          text-transform: uppercase;
+                          color: #7e8a4f;
+                        "
+                      >
+                        Vos accès
+                      </p>
+                      <p style="margin: 0; font-size: 13px; color: #4a5340; line-height: 1.6;">
+                        <strong>Identifiant :</strong> {{ .Email }}<br />
+                        <strong>Rôle :</strong> {{ .Data.role }}
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Lien fallback -->
+            <tr>
+              <td style="padding: 0 36px 28px 36px">
+                <p style="font-size: 12px; color: #7a8068; line-height: 1.6; margin: 0;">
+                  Si le bouton ne fonctionne pas, copiez et collez ce lien dans
+                  votre navigateur&nbsp;:<br />
+                  <a
+                    href="{{ .ConfirmationURL }}"
+                    style="color: #5e6b3a; word-break: break-all;"
+                    >{{ .ConfirmationURL }}</a
+                  >
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td
+                style="
+                  border-top: 1px solid #ebe9d4;
+                  padding: 20px 36px;
+                  background: #fafaf2;
+                "
+              >
+                <p style="margin: 0; font-size: 11px; color: #7a8068; line-height: 1.6;">
+                  Vous recevez cet e-mail parce que le Chef de Service du
+                  Service de Toxicologie du CHU&nbsp;Constantine a créé un
+                  compte à votre attention. Si vous n'attendiez pas cette
+                  invitation, ignorez ce message.
+                </p>
+              </td>
+            </tr>
+          </table>
+
+          <p
+            style="
+              margin: 16px 0 0 0;
+              font-size: 11px;
+              color: #9aa088;
+              text-align: center;
+            "
+          >
+            Service de Toxicologie · CHU Constantine
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
