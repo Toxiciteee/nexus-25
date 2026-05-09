@@ -59,13 +59,14 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* KPIs */}
+      {/* KPIs cliquables */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
           label="Brouillons"
           value={nbBrouillon ?? 0}
           variant="outline"
           icon={<FileEdit className="h-8 w-8" />}
+          href="/analyses?statut=brouillon"
           index={0}
         />
         <KpiCard
@@ -73,6 +74,7 @@ export default async function DashboardPage() {
           value={nbAttenteUnite ?? 0}
           variant="warning"
           icon={<Hourglass className="h-8 w-8" />}
+          href="/analyses?statut=attente_unite"
           index={1}
         />
         <KpiCard
@@ -80,6 +82,7 @@ export default async function DashboardPage() {
           value={nbAttenteChef ?? 0}
           variant="warning"
           icon={<ShieldCheck className="h-8 w-8" />}
+          href="/analyses?statut=attente_chef"
           index={2}
         />
         <KpiCard
@@ -87,6 +90,7 @@ export default async function DashboardPage() {
           value={nbValide ?? 0}
           variant="success"
           icon={<BadgeCheck className="h-8 w-8" />}
+          href="/analyses?statut=valide"
           index={3}
         />
       </div>

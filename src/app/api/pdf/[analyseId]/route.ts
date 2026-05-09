@@ -14,9 +14,10 @@ import {
 } from "@/lib/forms/schemas";
 
 /**
- * Rapport imprimable v2 — basé sur le schéma de l'unité.
- * Page HTML auto-imprimable conforme aux modèles Word fournis (Médico-légale,
- * Pharmacodépendance). Pour les autres unités : rendu générique.
+ * Rapport imprimable v3 — palette olive + contrainte 1 page A4.
+ * Compact, dense mais lisible. La feuille @page A4 + tailles réduites
+ * + section interprétation tassée garantissent qu'une analyse standard
+ * (jusqu'à ~10 substances) tient sur une seule page.
  */
 export async function GET(
   _req: Request,
@@ -53,11 +54,7 @@ export async function GET(
   const schema = getSchemaForUnit(a.unite?.code ?? null);
   const resultats = (a.resultats ?? {}) as Record<string, unknown>;
 
-  const html = renderReport({
-    schema,
-    resultats,
-    analyse: a,
-  });
+  const html = renderReport({ schema, resultats, analyse: a });
 
   return new NextResponse(html, {
     status: 200,
@@ -71,6 +68,7 @@ type AnalyseFull = {
   statut: string;
   date_prelevement: string | null;
   conclusion: string | null;
+  interpretation: string | null;
   valide_unite_at: string | null;
   valide_chef_at: string | null;
   patient: {
@@ -88,6 +86,20 @@ type AnalyseFull = {
   valide_chef: { nom: string; prenom: string } | null;
 };
 
+/* ====================================================================== */
+/*  Palette olive (alignée sur l'app)                                     */
+/* ====================================================================== */
+const OLIVE = "#7e8a4f";          // primary
+const OLIVE_DARK = "#5e6b3a";     // primary-700
+const OLIVE_LIGHT = "#f6f5ee";    // primary-50 / cream
+const OLIVE_TINT = "#eceddb";     // primary-100
+const OLIVE_BORDER = "#d8d9b8";   // border tint
+const TEXT = "#2a2f23";
+const TEXT_MUTED = "#5d6450";
+const POSITIVE = "#a6342e";       // alerte
+const NEGATIVE = "#3d6e4a";       // safe
+const NEUTRAL = "#7a8068";        // ns
+
 function renderReport({
   schema,
   resultats,
@@ -103,53 +115,184 @@ function renderReport({
 <meta charset="utf-8" />
 <title>${schema.reportTitle} — ${analyse.numero ?? analyse.id.slice(0, 8)}</title>
 <style>
-  * { box-sizing: border-box; }
-  body { font-family: 'Segoe UI', -apple-system, system-ui, sans-serif; color: #111827; margin: 28px; font-size: 12px; }
-  header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0369a1; padding-bottom: 14px; margin-bottom: 22px; }
-  .brand { display: flex; gap: 14px; align-items: center; }
-  .brand-logo { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #0369a1, #38bdf8); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; }
-  .brand h1 { margin: 0; font-size: 16px; color: #0c4a6e; letter-spacing: 0.3px; }
-  .brand p { margin: 2px 0; color: #475569; font-size: 11px; }
-  .meta { font-size: 11px; text-align: right; color: #475569; line-height: 1.5; }
-  .meta strong { color: #0c4a6e; }
-  h2.report { text-align: center; font-size: 14px; color: #0c4a6e; letter-spacing: 1px; margin: 18px 0 14px; padding: 8px; background: #f0f9ff; border-radius: 6px; }
-  h3.section { font-size: 11px; color: #0369a1; text-transform: uppercase; letter-spacing: 1px; margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #cbd5e1; }
-  table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 8px; }
-  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
-  th { background: #f1f5f9; font-weight: 600; color: #334155; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; font-size: 11px; }
-  .field { display: flex; gap: 8px; padding: 4px 0; }
-  .field label { color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; min-width: 130px; }
+  /* === Page A4, marges minimales pour tenir en 1 page === */
+  @page { size: A4 portrait; margin: 8mm 10mm; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #ffffff; color: ${TEXT}; }
+  body {
+    font-family: 'Segoe UI', -apple-system, system-ui, sans-serif;
+    font-size: 10px;
+    line-height: 1.4;
+    padding: 0;
+  }
+
+  .page {
+    width: 100%;
+    max-width: 190mm;
+    margin: 0 auto;
+    padding: 8mm 10mm;
+  }
+
+  /* === Header compact === */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    border-bottom: 2px solid ${OLIVE};
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+  .brand { display: flex; gap: 10px; align-items: center; }
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, ${OLIVE}, ${OLIVE_DARK});
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .brand h1 { font-size: 13px; color: ${OLIVE_DARK}; letter-spacing: 0.2px; }
+  .brand p { font-size: 9px; color: ${TEXT_MUTED}; margin-top: 1px; }
+  .meta { font-size: 9px; text-align: right; color: ${TEXT_MUTED}; line-height: 1.45; }
+  .meta strong { color: ${OLIVE_DARK}; }
+
+  h2.report {
+    text-align: center;
+    font-size: 11px;
+    color: ${OLIVE_DARK};
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin: 8px 0 8px;
+    padding: 5px;
+    background: ${OLIVE_LIGHT};
+    border-radius: 4px;
+    font-weight: 700;
+  }
+
+  h3.section {
+    font-size: 9px;
+    color: ${OLIVE_DARK};
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 8px 0 4px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid ${OLIVE_BORDER};
+    font-weight: 700;
+    page-break-after: avoid;
+  }
+
+  /* === Tableaux compacts === */
+  table { width: 100%; border-collapse: collapse; font-size: 9.5px; margin-bottom: 4px; page-break-inside: avoid; }
+  th, td {
+    text-align: left;
+    padding: 3px 6px;
+    border-bottom: 1px solid ${OLIVE_BORDER};
+    vertical-align: top;
+  }
+  th {
+    background: ${OLIVE_TINT};
+    font-weight: 600;
+    color: ${OLIVE_DARK};
+    font-size: 8.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  /* === Grille 2 colonnes pour identité === */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; font-size: 9.5px; }
+  .field { display: flex; gap: 6px; padding: 1px 0; }
+  .field label { color: ${TEXT_MUTED}; font-size: 8px; text-transform: uppercase; letter-spacing: 0.4px; min-width: 92px; font-weight: 600; }
   .field span { font-weight: 500; }
-  .pos { color: #b91c1c; font-weight: 700; }
-  .neg { color: #166534; }
-  .ns { color: #64748b; font-style: italic; }
-  .signatures { margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  .signature { padding-top: 10px; border-top: 1px solid #94a3b8; font-size: 10px; }
-  .signature strong { display: block; color: #0c4a6e; margin-bottom: 4px; font-size: 11px; }
-  .conclusion { background: #fafafa; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; white-space: pre-wrap; font-size: 11px; }
-  footer { margin-top: 30px; font-size: 9px; color: #94a3b8; text-align: center; padding-top: 12px; border-top: 1px dashed #e2e8f0; }
+
+  /* Statuts résultats */
+  .pos { color: ${POSITIVE}; font-weight: 700; }
+  .neg { color: ${NEGATIVE}; }
+  .ns { color: ${NEUTRAL}; font-style: italic; }
+
+  /* === Interprétation et conclusion : compact === */
+  .conclusion {
+    background: ${OLIVE_LIGHT};
+    border: 1px solid ${OLIVE_BORDER};
+    padding: 6px 8px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    font-size: 9.5px;
+    line-height: 1.45;
+  }
+
+  /* === Signatures côte à côte, compactes === */
+  .signatures {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    page-break-inside: avoid;
+  }
+  .signature {
+    padding-top: 6px;
+    border-top: 1px solid ${OLIVE};
+    font-size: 8.5px;
+    line-height: 1.45;
+  }
+  .signature strong {
+    display: block;
+    color: ${OLIVE_DARK};
+    margin-bottom: 2px;
+    font-size: 9px;
+  }
+
+  footer {
+    margin-top: 8px;
+    font-size: 7.5px;
+    color: ${NEUTRAL};
+    text-align: center;
+    padding-top: 4px;
+    border-top: 1px dashed ${OLIVE_BORDER};
+  }
+
+  /* === Bouton Imprimer (caché à l'impression) === */
+  .print-btn {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    padding: 8px 14px;
+    background: ${OLIVE};
+    color: #fff;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(126, 138, 79, 0.3);
+    z-index: 100;
+  }
+  .print-btn:hover { background: ${OLIVE_DARK}; }
+
   @media print {
-    body { margin: 14mm; }
     .print-btn { display: none; }
-    header { page-break-after: avoid; }
-    h3.section { page-break-after: avoid; }
+    .page { padding: 0; }
+    body { font-size: 9.5px; }
   }
 </style>
 </head>
 <body>
 
-<button class="print-btn" onclick="window.print()" style="position:fixed;top:14px;right:14px;padding:8px 14px;background:#0369a1;color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;box-shadow:0 4px 12px rgba(3,105,161,0.25);">
-  Imprimer
-</button>
+<button class="print-btn" onclick="window.print()">Imprimer</button>
+
+<div class="page">
 
 <header>
   <div class="brand">
-    <div class="brand-logo">Tx</div>
+    <div class="brand-logo">☠</div>
     <div>
       <h1>Service de Toxicologie</h1>
-      <p>CHU Constantine</p>
-      <p>Unité : ${escape(analyse.unite?.nom)} (${escape(analyse.unite?.code)})</p>
+      <p>CHU Constantine — Unité ${escape(analyse.unite?.code)} — ${escape(analyse.unite?.nom)}</p>
     </div>
   </div>
   <div class="meta">
@@ -165,14 +308,20 @@ function renderReport({
 <div class="grid2">
   <div class="field"><label>Nom complet</label><span>${analyse.patient ? fullName(analyse.patient) : "—"}</span></div>
   <div class="field"><label>Numéro INI</label><span>${escape(analyse.patient?.ini)}</span></div>
-  <div class="field"><label>Date de naissance</label><span>${formatDate(analyse.patient?.date_naissance)}</span></div>
+  <div class="field"><label>Date naissance</label><span>${formatDate(analyse.patient?.date_naissance)}</span></div>
   <div class="field"><label>Sexe</label><span>${escape(analyse.patient?.sexe)}</span></div>
-  <div class="field"><label>Ville de naissance</label><span>${escape(analyse.patient?.ville_naissance)}</span></div>
-  <div class="field"><label>Type de prélèvement</label><span>${escape(analyse.type?.nom)}</span></div>
-  <div class="field"><label>Date de prélèvement</label><span>${formatDate(analyse.date_prelevement)}</span></div>
+  <div class="field"><label>Ville naissance</label><span>${escape(analyse.patient?.ville_naissance)}</span></div>
+  <div class="field"><label>Type prélèvement</label><span>${escape(analyse.type?.nom)}</span></div>
+  <div class="field"><label>Date prélèvement</label><span>${formatDate(analyse.date_prelevement)}</span></div>
 </div>
 
 ${schema.sections.map((s) => renderSection(s, resultats)).join("")}
+
+${
+  analyse.interpretation
+    ? `<h3 class="section">Interprétation clinique (Chef d'unité)</h3><div class="conclusion">${escape(analyse.interpretation)}</div>`
+    : ""
+}
 
 ${
   analyse.conclusion
@@ -182,18 +331,20 @@ ${
 
 <div class="signatures">
   <div class="signature">
-    <strong>Validation Unité</strong>
+    <strong>Validation Chef d'unité</strong>
     ${analyse.valide_unite ? fullName(analyse.valide_unite) : "—"}<br/>
-    <span style="color:#64748b">${formatDateTime(analyse.valide_unite_at)}</span>
+    <span style="color:${TEXT_MUTED}">${formatDateTime(analyse.valide_unite_at)}</span>
   </div>
   <div class="signature">
     <strong>Cheffe du Service de Toxicologie</strong>
     ${analyse.valide_chef ? fullName(analyse.valide_chef) : "—"}<br/>
-    <span style="color:#64748b">${formatDateTime(analyse.valide_chef_at)}</span>
+    <span style="color:${TEXT_MUTED}">${formatDateTime(analyse.valide_chef_at)}</span>
   </div>
 </div>
 
 <footer>Document généré automatiquement par l'application de gestion du Service de Toxicologie — CHU Constantine.</footer>
+
+</div>
 </body>
 </html>`;
 }
@@ -202,12 +353,12 @@ function renderSection(
   section: { id: string; title: string; fields: Field[] },
   values: Record<string, unknown>,
 ): string {
-  // Sections traitées séparément (déjà rendues ailleurs ou non utiles dans le PDF)
-  if (section.id === "interpretation" || section.id === "conclusion") {
-    return renderTextSection(section, values);
-  }
+  // L'ancienne section "interpretation" du schéma MEDLEG est désormais traitée
+  // séparément (champ analyses.interpretation). On la skip si présente dans le
+  // schéma pour ne pas dupliquer.
+  if (section.id === "interpretation") return "";
+  if (section.id === "conclusion") return renderTextSection(section, values);
 
-  // Sections "table" (prélèvements MEDLEG, substances PHARMA, qualitatifs, quantitatifs)
   const isTableLike = section.fields.some((f) =>
     ["checkbox-row", "quantitative", "qualitative", "substance-pharma"].includes(
       f.type,
@@ -226,7 +377,6 @@ function renderSection(
     `;
   }
 
-  // Sections de champs simples
   return `
     <h3 class="section">${section.title}</h3>
     <div class="grid2">
@@ -350,7 +500,7 @@ function renderTableRow(field: Field, value: unknown): string {
       <td><strong>${escape(field.label)}</strong></td>
       <td>${escape(field.seuil)}</td>
       <td class="${cls}">${label}</td>
-      <td>${field.fenetre.map(escape).join("<br/>")}</td>
+      <td style="font-size: 8.5px;">${field.fenetre.map(escape).join(" · ")}</td>
     </tr>`;
   }
 

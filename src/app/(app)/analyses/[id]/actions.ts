@@ -57,11 +57,85 @@ export async function submitToChefUnite(
   return transition(analyseId, "brouillon", "attente_unite", ["secretaire"]);
 }
 
-/** Chef d'unité : valide et envoie au Chef de Service (attente_unite → attente_chef). */
-export async function validateChefUnite(
+/**
+ * Chef d'unité : saisit l'interprétation clinique ET valide en une seule
+ * action (attente_unite → attente_chef). Atomique : si la mise à jour échoue,
+ * le statut ne change pas.
+ */
+export async function validateChefUniteWithInterpretation(
   analyseId: string,
+  interpretation: string,
 ): Promise<ActionResult> {
-  return transition(analyseId, "attente_unite", "attente_chef", ["chef_unite"]);
+  const personnel = await requirePersonnel();
+  const a = await loadAnalyse(analyseId);
+  if (!a) return { error: "Analyse introuvable." };
+  if (a.statut !== "attente_unite") {
+    return { error: `Action impossible : statut actuel "${a.statut}".` };
+  }
+  if (personnel.role !== "chef_service" && personnel.role !== "chef_unite") {
+    return { error: "Action réservée au Chef d'unité." };
+  }
+  if (personnel.role !== "chef_service" && a.unite_id !== personnel.unite_id) {
+    return { error: "Cette analyse n'appartient pas à votre unité." };
+  }
+  const trimmed = interpretation.trim();
+  if (trimmed.length < 5) {
+    return {
+      error:
+        "L'interprétation clinique est obligatoire avant validation (5 caractères minimum).",
+    };
+  }
+
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("analyses")
+    .update({
+      interpretation: trimmed,
+      interpretation_par: personnel.id,
+      interpretation_at: now,
+      statut: "attente_chef",
+      valide_unite_par: personnel.id,
+      valide_unite_at: now,
+    })
+    .eq("id", analyseId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/analyses/${analyseId}`);
+  revalidatePath("/dashboard");
+  return { success: "Interprétation enregistrée et dossier transmis." };
+}
+
+/**
+ * Variante "auto-save" de l'interprétation sans changer le statut.
+ * Permet au Chef d'unité de sauvegarder son brouillon d'interprétation.
+ */
+export async function saveInterpretation(
+  analyseId: string,
+  interpretation: string,
+): Promise<ActionResult> {
+  const personnel = await requirePersonnel();
+  const a = await loadAnalyse(analyseId);
+  if (!a) return { error: "Analyse introuvable." };
+  if (a.statut !== "attente_unite") {
+    return { error: "Modification impossible à ce statut." };
+  }
+  if (personnel.role !== "chef_service" && personnel.role !== "chef_unite") {
+    return { error: "Action réservée au Chef d'unité." };
+  }
+  if (personnel.role !== "chef_service" && a.unite_id !== personnel.unite_id) {
+    return { error: "Cette analyse n'appartient pas à votre unité." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("analyses")
+    .update({ interpretation: interpretation.trim() })
+    .eq("id", analyseId);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/analyses/${analyseId}`);
+  return { success: "Interprétation enregistrée." };
 }
 
 /** Chef de Service : validation finale (attente_chef → valide). */

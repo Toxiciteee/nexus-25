@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Send, CheckCircle2, ShieldCheck, Undo2, Trash2 } from "lucide-react";
+import { Send, ShieldCheck, Undo2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import {
   submitToChefUnite,
-  validateChefUnite,
   validateChefService,
   rejectAnalyse,
   deleteAnalyse,
@@ -94,33 +93,11 @@ export function WorkflowActions({
     );
   }
 
-  // Chef d'unité (ou Chef Service) en attente_unite → valider et envoyer au Chef Service
+  // En attente_unite : la validation passe par <InterpretationPanel> (avec
+  // saisie obligatoire de l'interprétation clinique, juste au-dessus de cette
+  // colonne). On ne propose donc ici que le renvoi en brouillon.
   if (statut === "attente_unite" && (personnelRole === "chef_unite" || isChef) && sameUniteOrChef) {
     buttons.push(
-      <Button
-        key="validate-unit"
-        onClick={() =>
-          setConfirm({
-            fn: () => validateChefUnite(analyseId),
-            title: "Valider et transmettre au Chef de Service ?",
-            description: (
-              <>
-                Vous certifiez avoir vérifié les résultats de ce dossier. Il sera
-                ensuite transmis à <strong>Mme Benboudiaf Sabah</strong> pour
-                validation finale.
-              </>
-            ),
-            confirmLabel: "Valider et transmettre",
-            tone: "success",
-            icon: <CheckCircle2 className="h-5 w-5" />,
-          })
-        }
-        disabled={pending}
-        className="w-full"
-      >
-        <CheckCircle2 className="h-4 w-4" />
-        Valider et transmettre au Chef de Service
-      </Button>,
       <Button
         key="reject"
         onClick={() =>

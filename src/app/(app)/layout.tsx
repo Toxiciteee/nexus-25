@@ -6,6 +6,7 @@ import { fullName } from "@/lib/format";
 import { LogoBadge } from "@/components/brand/logo";
 import { SidebarNavLink, PageFade } from "./shell-client";
 import { LogoutButton } from "./logout-button";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const personnel = await requirePersonnel();
@@ -38,10 +39,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <aside className="hidden lg:flex w-64 flex-col border-r bg-(--color-card)/70 backdrop-blur-xs">
         <div className="h-16 flex items-center gap-3 px-5 border-b">
           <LogoBadge size="sm" />
-          <div className="leading-tight">
+          <div className="leading-tight flex-1 min-w-0">
             <p className="text-sm font-semibold">Toxicologie</p>
             <p className="text-[11px] text-(--color-muted-foreground)">CHU Constantine</p>
           </div>
+          <NotificationBell personnelId={personnel.id} />
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
@@ -93,7 +95,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <LogoBadge size="sm" />
             <span className="font-semibold text-sm">Toxicologie</span>
           </div>
-          <LogoutButton iconOnly className="text-(--color-muted-foreground)" />
+          <div className="flex items-center gap-1">
+            <NotificationBell personnelId={personnel.id} />
+            <LogoutButton iconOnly className="text-(--color-muted-foreground) p-2" />
+          </div>
         </header>
 
         <main className="flex-1 overflow-auto">

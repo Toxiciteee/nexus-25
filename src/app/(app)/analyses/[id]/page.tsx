@@ -16,6 +16,7 @@ import {
 } from "@/lib/format";
 import { WorkflowActions } from "./workflow-actions";
 import { ResultatsForm } from "./resultats-form";
+import { InterpretationPanel } from "./interpretation-panel";
 
 const EVENT_LABELS: Record<string, string> = {
   creation: "Création",
@@ -107,6 +108,33 @@ export default async function AnalyseDetailPage({
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
+          {/* Panneau d'interprétation : visible UNIQUEMENT pour le Chef d'unité
+              (ou Chef de Service) quand le dossier attend la validation d'unité */}
+          {analyse.statut === "attente_unite" &&
+            (personnel.role === "chef_unite" || personnel.role === "chef_service") &&
+            (personnel.role === "chef_service" ||
+              analyse.unite_id === personnel.unite_id) && (
+              <InterpretationPanel
+                analyseId={analyse.id}
+                initialValue={analyse.interpretation ?? ""}
+              />
+            )}
+
+          {/* Affichage en lecture seule de l'interprétation déjà saisie
+              (pour les autres rôles ou statuts ultérieurs) */}
+          {analyse.interpretation && analyse.statut !== "attente_unite" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Interprétation clinique</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                  {analyse.interpretation}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Résultats</CardTitle>

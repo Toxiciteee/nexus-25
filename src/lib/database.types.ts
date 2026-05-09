@@ -19,6 +19,9 @@ export type Database = {
           created_by: string | null;
           date_prelevement: string | null;
           id: string;
+          interpretation: string | null;
+          interpretation_at: string | null;
+          interpretation_par: string | null;
           numero: string | null;
           patient_id: string;
           resultats: Json;
@@ -39,6 +42,9 @@ export type Database = {
           created_by?: string | null;
           date_prelevement?: string | null;
           id?: string;
+          interpretation?: string | null;
+          interpretation_at?: string | null;
+          interpretation_par?: string | null;
           numero?: string | null;
           patient_id: string;
           resultats?: Json;
@@ -59,6 +65,9 @@ export type Database = {
           created_by?: string | null;
           date_prelevement?: string | null;
           id?: string;
+          interpretation?: string | null;
+          interpretation_at?: string | null;
+          interpretation_par?: string | null;
           numero?: string | null;
           patient_id?: string;
           resultats?: Json;
@@ -169,6 +178,45 @@ export type Database = {
             columns: ["analyse_id"];
             isOneToOne: false;
             referencedRelation: "analyses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      notifications: {
+        Row: {
+          analyse_id: string | null;
+          created_at: string;
+          destinataire: string;
+          id: string;
+          lue_at: string | null;
+          message: string | null;
+          titre: string;
+          type: string;
+        };
+        Insert: {
+          analyse_id?: string | null;
+          created_at?: string;
+          destinataire: string;
+          id?: string;
+          lue_at?: string | null;
+          message?: string | null;
+          titre: string;
+          type: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["notifications"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "notifications_analyse_id_fkey";
+            columns: ["analyse_id"];
+            isOneToOne: false;
+            referencedRelation: "analyses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notifications_destinataire_fkey";
+            columns: ["destinataire"];
+            isOneToOne: false;
+            referencedRelation: "personnel";
             referencedColumns: ["id"];
           },
         ];
@@ -349,6 +397,8 @@ export type TypePrelevement =
   Database["public"]["Tables"]["types_prelevement"]["Row"];
 export type AnalyseHistorique =
   Database["public"]["Tables"]["analyses_historique"]["Row"];
+export type Notification =
+  Database["public"]["Tables"]["notifications"]["Row"];
 
 export type RolePersonnel = Database["public"]["Enums"]["role_personnel"];
 export type StatutAnalyse = Database["public"]["Enums"]["statut_analyse"];
