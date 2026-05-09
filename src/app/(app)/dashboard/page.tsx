@@ -179,9 +179,10 @@ async function getMyQueue(role: string, uniteId: string | null) {
     .order("updated_at", { ascending: false })
     .limit(10);
 
-  if (role === "secretaire" && uniteId) {
-    query = query.eq("statut", "brouillon").eq("unite_id", uniteId);
-  } else if ((role === "resident" || role === "responsable_unite") && uniteId) {
+  if (role === "secretaire") {
+    // La secrétaire est transverse — ses propres brouillons (RLS s'occupe du reste)
+    query = query.eq("statut", "brouillon");
+  } else if (role === "chef_unite" && uniteId) {
     query = query.eq("statut", "attente_unite").eq("unite_id", uniteId);
   } else if (role === "chef_service") {
     query = query.eq("statut", "attente_chef");

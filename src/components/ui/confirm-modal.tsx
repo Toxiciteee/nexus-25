@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,13 @@ export function ConfirmModal({
     return () => document.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
+  // Mount on body — évite que `position:fixed` soit capturé par un ancêtre
+  // ayant `transform`, `filter` ou `backdrop-filter` (ex: la sidebar avec blur).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const accentBg =
     tone === "danger"
       ? "bg-(--color-destructive)/10 text-(--color-destructive)"
@@ -49,7 +57,9 @@ export function ConfirmModal({
   const buttonVariant: "default" | "destructive" =
     tone === "danger" ? "destructive" : "default";
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -126,6 +136,7 @@ export function ConfirmModal({
           </div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

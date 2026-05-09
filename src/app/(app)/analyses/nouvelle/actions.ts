@@ -38,10 +38,8 @@ export async function createAnalyse(
     .maybeSingle();
 
   if (!patient) return { error: "Patient introuvable." };
-
-  if (personnel.role === "secretaire" && patient.unite_id !== personnel.unite_id) {
-    return { error: "Vous ne pouvez créer une analyse que pour un patient de votre unité." };
-  }
+  // La secrétaire est transverse — elle peut saisir pour n'importe quelle unité.
+  // L'unité de l'analyse vient toujours du patient (vérifiée par le trigger DB).
 
   const { data, error } = await supabase
     .from("analyses")

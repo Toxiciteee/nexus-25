@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { inviteMember, type InviteState } from "./actions";
 import { ROLE_OPTIONS } from "./constants";
+import type { RolePersonnel } from "@/lib/database.types";
 
 type Unite = { id: string; code: string; nom: string };
 
@@ -15,6 +16,8 @@ export function InviteForm({ unites }: { unites: Unite[] }) {
     inviteMember,
     undefined,
   );
+  const [role, setRole] = useState<RolePersonnel>("secretaire");
+  const uniteRequired = role === "chef_unite";
 
   return (
     <form action={action} className="space-y-3">
@@ -34,28 +37,41 @@ export function InviteForm({ unites }: { unites: Unite[] }) {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="role">Rôle *</Label>
-        <Select id="role" name="role" required defaultValue="secretaire">
+        <Select
+          id="role"
+          name="role"
+          required
+          value={role}
+          onChange={(e) => setRole(e.target.value as RolePersonnel)}
+        >
           {ROLE_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
           ))}
         </Select>
+        <p className="text-[11px] text-(--color-muted-foreground) mt-1 leading-snug">
+          {role === "secretaire"
+            ? "La Secrétaire est transverse — elle peut saisir des dossiers pour n'importe quelle unité."
+            : "Le Chef d'unité ne voit et ne valide que les dossiers de son unité."}
+        </p>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="unite_id">Unité *</Label>
-        <Select id="unite_id" name="unite_id" required defaultValue="">
-          <option value="" disabled>
-            Choisir une unité…
-          </option>
-          {unites.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.nom}
+      {uniteRequired && (
+        <div className="space-y-1.5">
+          <Label htmlFor="unite_id">Unité *</Label>
+          <Select id="unite_id" name="unite_id" required defaultValue="">
+            <option value="" disabled>
+              Choisir une unité…
             </option>
-          ))}
-        </Select>
-      </div>
+            {unites.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nom}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
 
       {state?.error && (
         <p className="text-sm text-(--color-destructive)" role="alert">

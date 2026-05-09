@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, Users, Settings, KeyRound, History } from "lucide-react";
+import { LayoutDashboard, Users, Settings, KeyRound, History, FileText } from "lucide-react";
 import { requirePersonnel, ROLE_LABELS } from "@/lib/auth/rbac";
 import { createClient } from "@/lib/supabase/server";
 import { fullName } from "@/lib/format";
@@ -22,8 +22,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const isChef = personnel.role === "chef_service";
 
+  // Note : grâce aux RLS, "Analyses" et "Patients" affichent automatiquement
+  // les seules entrées que l'utilisateur a le droit de voir (cloisonnement
+  // unité pour Chef d'unité ; tout pour Chef de Service ; transverse pour
+  // Secrétaire).
   const navItems = [
     { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
+    { href: "/analyses", label: "Analyses", icon: FileText },
     { href: "/patients", label: "Patients", icon: Users },
   ];
   if (isChef) {

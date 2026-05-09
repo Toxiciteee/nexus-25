@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Bell, CheckCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -13,8 +14,42 @@ export function NotificationBell({ personnelId }: { personnelId: string }) {
   const [items, setItems] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [popPos, setPopPos] = useState<{ top: number; left: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   const unread = items.filter((n) => !n.lue_at).length;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Calcule la position du popover par rapport au bouton (en coordonnées
+  // viewport — on rend le popover via un portail sur document.body).
+  useLayoutEffect(() => {
+    if (!open) return;
+    const update = () => {
+      const r = buttonRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const POP_WIDTH = 360;
+      const MARGIN = 8;
+      const vw = window.innerWidth;
+      // On préfère aligner le bord gauche du popover sous le bouton, sauf
+      // si ça déborde à droite ; dans ce cas on aligne à droite.
+      let left = r.left;
+      if (left + POP_WIDTH + MARGIN > vw) {
+        left = Math.max(MARGIN, vw - POP_WIDTH - MARGIN);
+      }
+      setPopPos({ top: r.bottom + 8, left });
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [open]);
 
   // Charge initiale + souscription temps réel
   useEffect(() => {
@@ -59,13 +94,14 @@ export function NotificationBell({ personnelId }: { personnelId: string }) {
     };
   }, [personnelId]);
 
-  // Click outside
+  // Click outside (le popover est dans un portail mais aussi tracké par data-attr)
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      const inButton = containerRef.current?.contains(target);
+      const inPopover = (target as Element)?.closest?.("[data-notif-popover]");
+      if (!inButton && !inPopover) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -95,72 +131,87 @@ export function NotificationBell({ personnelId }: { personnelId: string }) {
   };
 
   return (
-    <div ref={containerRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="relative h-9 w-9 rounded-lg flex items-center justify-center text-(--color-muted-foreground) hover:bg-(--color-accent) hover:text-(--color-foreground) transition-colors"
-        aria-label="Notifications"
-      >
-        <Bell className="h-4 w-4" />
-        {unread > 0 && (
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-(--color-destructive) text-(--color-destructive-foreground) text-[9px] font-semibold flex items-center justify-center"
-          >
-            {unread > 9 ? "9+" : unread}
-          </motion.span>
-        )}
-      </button>
+    <>
+      <div ref={containerRef}>
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="relative h-9 w-9 rounded-lg flex items-center justify-center text-(--color-muted-foreground) hover:bg-(--color-accent) hover:text-(--color-foreground) transition-colors"
+          aria-label="Notifications"
+        >
+          <Bell className="h-4 w-4" />
+          {unread > 0 && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-(--color-destructive) text-(--color-destructive-foreground) text-[9px] font-semibold flex items-center justify-center"
+            >
+              {unread > 9 ? "9+" : unread}
+            </motion.span>
+          )}
+        </button>
+      </div>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-80 lg:w-96 rounded-xl bg-(--color-card) border shadow-2xl z-50 overflow-hidden"
-          >
-            <div className="px-4 py-2.5 border-b flex items-center justify-between">
-              <p className="text-sm font-semibold">Notifications</p>
-              {unread > 0 && (
-                <button
-                  onClick={markAllRead}
-                  className="text-[11px] text-(--color-primary) hover:underline inline-flex items-center gap-1"
-                >
-                  <CheckCheck className="h-3 w-3" />
-                  Tout marquer lu
-                </button>
-              )}
-            </div>
-
-            <div className="max-h-[400px] overflow-y-auto">
-              {items.length === 0 ? (
-                <div className="px-4 py-8 text-center text-sm text-(--color-muted-foreground)">
-                  Aucune notification.
+      {mounted &&
+        createPortal(
+          <AnimatePresence>
+            {open && popPos && (
+              <motion.div
+                data-notif-popover
+                initial={{ opacity: 0, y: -4, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.97 }}
+                transition={{ duration: 0.15 }}
+                style={{
+                  position: "fixed",
+                  top: popPos.top,
+                  left: popPos.left,
+                  width: 360,
+                  zIndex: 50,
+                }}
+                className="rounded-xl bg-(--color-card) border shadow-2xl overflow-hidden"
+              >
+                <div className="px-4 py-2.5 border-b flex items-center justify-between">
+                  <p className="text-sm font-semibold">Notifications</p>
+                  {unread > 0 && (
+                    <button
+                      onClick={markAllRead}
+                      className="text-[11px] text-(--color-primary) hover:underline inline-flex items-center gap-1"
+                    >
+                      <CheckCheck className="h-3 w-3" />
+                      Tout marquer lu
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <ul>
-                  {items.map((n) => (
-                    <li key={n.id}>
-                      <NotificationItem
-                        notif={n}
-                        onClick={() => {
-                          if (!n.lue_at) void markOneRead(n.id);
-                          setOpen(false);
-                        }}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </motion.div>
+
+                <div className="max-h-[400px] overflow-y-auto">
+                  {items.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-(--color-muted-foreground)">
+                      Aucune notification.
+                    </div>
+                  ) : (
+                    <ul>
+                      {items.map((n) => (
+                        <li key={n.id}>
+                          <NotificationItem
+                            notif={n}
+                            onClick={() => {
+                              if (!n.lue_at) void markOneRead(n.id);
+                              setOpen(false);
+                            }}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
-    </div>
+    </>
   );
 }
 

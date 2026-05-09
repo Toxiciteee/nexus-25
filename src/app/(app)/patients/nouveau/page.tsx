@@ -25,7 +25,12 @@ export default async function NewPatientPage() {
         <CardContent>
           <NewPatientForm
             unites={unites ?? []}
-            isChef={personnel.role === "chef_service"}
+            // La secrétaire et le Chef de Service choisissent toujours l'unité
+            // (la secrétaire est transverse — elle peut saisir pour n'importe
+            // quelle unité). Pour les autres rôles, l'unité est implicite.
+            mustPickUnite={
+              personnel.role === "secretaire" || personnel.role === "chef_service"
+            }
             uniteId={personnel.unite_id}
           />
         </CardContent>

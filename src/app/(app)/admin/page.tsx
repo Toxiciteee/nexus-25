@@ -13,9 +13,12 @@ import {
 import { fullName } from "@/lib/format";
 import { InviteForm } from "./invite-form";
 import { ToggleActifButton } from "./toggle-actif-button";
+import { DeletePersonnelButton } from "./delete-personnel-button";
+import { getCurrentPersonnel } from "@/lib/auth/rbac";
 
 export default async function AdminPage() {
   await requireChef();
+  const me = await getCurrentPersonnel();
   const supabase = await createClient();
 
   const [{ data: members }, { data: unites }] = await Promise.all([
@@ -110,7 +113,16 @@ export default async function AdminPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <ToggleActifButton id={m.id} actif={m.actif} />
+                        <div className="inline-flex items-center gap-0">
+                          <ToggleActifButton id={m.id} actif={m.actif} />
+                          {me && me.id !== m.id && m.role !== "chef_service" && (
+                            <DeletePersonnelButton
+                              personnelId={m.id}
+                              personnelName={fullName(m)}
+                              email={m.email}
+                            />
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

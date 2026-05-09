@@ -24,23 +24,18 @@ export function AcceptInviteClient() {
   const [confirm, setConfirm] = useState("");
   const [pending, start] = useTransition();
 
-  // 1. Au montage, on attend que Supabase ait monté la session depuis le fragment
+  // 1. Détection de la session : on combine getSession() (au cas où elle
+  //    est déjà installée) + onAuthStateChange (pour attraper l'événement
+  //    `INITIAL_SESSION` qui se déclenche après le parsing du fragment d'URL).
   useEffect(() => {
     const supabase = createClient();
     let cancelled = false;
+    let resolved = false;
 
-    const init = async () => {
-      // Le SDK Supabase consomme automatiquement le fragment `#access_token=…`
-      const { data, error } = await supabase.auth.getSession();
-      if (cancelled) return;
-      if (error || !data.session) {
-        setStatus("error");
-        setErrorMsg(
-          "Lien d'invitation invalide ou expiré. Demandez à votre Chef de Service de vous renvoyer une invitation.",
-        );
-        return;
-      }
-      const u = data.session.user;
+    const setReady = (session: import("@supabase/supabase-js").Session) => {
+      if (cancelled || resolved) return;
+      resolved = true;
+      const u = session.user;
       setUser({
         email: u.email ?? "",
         prenom: (u.user_metadata?.prenom as string | undefined) ?? undefined,
@@ -50,9 +45,45 @@ export function AcceptInviteClient() {
       setStatus("ready");
     };
 
-    void init();
+    const setError = (msg: string) => {
+      if (cancelled || resolved) return;
+      resolved = true;
+      setStatus("error");
+      setErrorMsg(msg);
+    };
+
+    // Essai immédiat
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session) setReady(data.session);
+    });
+
+    // Écouteur pour les événements suivants (notamment quand le SDK
+    // termine de consommer le fragment `#access_token=…`).
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      if (session) {
+        setReady(session);
+      } else if (event === "INITIAL_SESSION") {
+        // Première résolution sans session → lien expiré ou invalide
+        setError(
+          "Lien d'invitation invalide ou expiré. Demandez à votre Chef de Service de vous renvoyer une invitation.",
+        );
+      }
+    });
+
+    // Garde-fou : si rien n'arrive après 6 s, on bascule en erreur.
+    const timeout = setTimeout(() => {
+      setError(
+        "Lien d'invitation introuvable. Vérifiez que vous avez bien cliqué sur le lien depuis l'e-mail le plus récent.",
+      );
+    }, 6000);
+
     return () => {
       cancelled = true;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -75,7 +106,6 @@ export function AcceptInviteClient() {
         return;
       }
       setStatus("success");
-      // Redirection après une courte pause pour montrer le succès
       setTimeout(() => router.push("/dashboard"), 900);
     });
   };

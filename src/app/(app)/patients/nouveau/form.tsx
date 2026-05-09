@@ -11,11 +11,11 @@ type Unite = { id: string; code: string; nom: string };
 
 export function NewPatientForm({
   unites,
-  isChef,
+  mustPickUnite,
   uniteId,
 }: {
   unites: Unite[];
-  isChef: boolean;
+  mustPickUnite: boolean;
   uniteId: string | null;
 }) {
   const [state, action, pending] = useActionState<CreatePatientState, FormData>(
@@ -48,11 +48,11 @@ export function NewPatientForm({
         <Field id="ville_naissance" label="Ville de naissance">
           <Input id="ville_naissance" name="ville_naissance" />
         </Field>
-        {isChef ? (
+        {mustPickUnite ? (
           <Field id="unite_id" label="Unité de rattachement" required>
             <Select id="unite_id" name="unite_id" required defaultValue="">
               <option value="" disabled>
-                Choisir une unité…
+                Choisir l'unité concernée…
               </option>
               {unites.map((u) => (
                 <option key={u.id} value={u.id}>

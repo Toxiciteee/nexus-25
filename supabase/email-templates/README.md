@@ -33,7 +33,31 @@ C'est fait. Au prochain envoi, le mail aura :
 - Un footer institutionnel
 
 > Le redirect vers `/auth/accept-invite` est déjà câblé côté code (server action
-> `inviteMember`). Aucun changement à faire dans le dashboard pour le redirect.
+> `inviteMember`). **Mais Supabase n'autorise un `redirectTo` que s'il est dans
+> la whitelist** — il faut donc l'y ajouter (étape 1 bis).
+
+### Étape 1 bis — Allow-list des URL de redirection (CRITIQUE)
+
+Si vous n'ajoutez pas votre URL dans cette liste, Supabase ignore le `redirectTo`
+fourni par le code et redirige vers la "Site URL" par défaut. L'invité atterrit
+alors sur la mauvaise page et ne peut PAS choisir son mot de passe.
+
+1. Dashboard Supabase → **Authentication → URL Configuration**.
+2. **Site URL** : `https://nexus25.fr` (ou votre domaine)
+3. **Redirect URLs** : ajouter ces deux entrées (une par ligne) :
+   ```
+   https://nexus25.fr/auth/accept-invite
+   https://nexus25.fr/login/reset-password
+   ```
+   Et pour le développement local :
+   ```
+   http://localhost:3000/auth/accept-invite
+   http://localhost:3000/login/reset-password
+   ```
+4. **Save**.
+
+Sans cette étape, le bouton "Activer mon compte" du mail amène l'invité vers
+la racine du site, sans session — d'où l'impossibilité de saisir un mot de passe.
 
 ---
 

@@ -28,16 +28,13 @@ export default async function NewAnalysePage({
       : Promise.resolve({ data: null }),
   ]);
 
-  // Liste des patients de mon unité (pour secrétaire) ou tous (pour chef)
-  const patientsQuery = supabase
+  // Liste des patients (la RLS s'occupe du cloisonnement : la secrétaire et le
+  // Chef de Service voient tout, le Chef d'unité ne voit que les siens).
+  const { data: patients } = await supabase
     .from("patients")
     .select("id, ini, nom, prenom, unite:unites(code)")
     .order("nom")
-    .limit(200);
-  if (personnel.role === "secretaire" && personnel.unite_id) {
-    patientsQuery.eq("unite_id", personnel.unite_id);
-  }
-  const { data: patients } = await patientsQuery;
+    .limit(500);
 
   return (
     <div className="p-6 lg:p-8 max-w-2xl mx-auto">

@@ -17,9 +17,9 @@ const InviteSchema = z
     role: z.enum(["secretaire", "chef_unite"]),
     unite_id: z.string().uuid().optional().nullable(),
   })
-  // Tous les rôles invitables (secretaire, chef_unite) sont rattachés à une unité.
-  .refine((v) => !!v.unite_id, {
-    message: "Unité requise pour ce rôle.",
+  // Le Chef d'unité doit avoir une unité ; la Secrétaire est transverse.
+  .refine((v) => v.role !== "chef_unite" || !!v.unite_id, {
+    message: "Unité requise pour un Chef d'unité.",
     path: ["unite_id"],
   });
 
@@ -100,5 +100,39 @@ export async function setActif(personnelId: string, actif: boolean) {
   const supabase = await createClient();
   await supabase.from("personnel").update({ actif }).eq("id", personnelId);
   revalidatePath("/admin");
+}
+
+/**
+ * Supprime définitivement un compte (auth + personnel) — réservé Chef de Service.
+ * Utilise le service-role pour révoquer aussi l'utilisateur Supabase Auth,
+ * libérant ainsi l'adresse e-mail pour une éventuelle réinvitation.
+ */
+export async function deletePersonnel(
+  personnelId: string,
+): Promise<{ error?: string; success?: string }> {
+  const chef = await requireChef();
+  if (chef.id === personnelId) {
+    return { error: "Vous ne pouvez pas supprimer votre propre compte." };
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    return {
+      error:
+        e instanceof Error
+          ? e.message
+          : "Service-role key manquante : ajoutez SUPABASE_SERVICE_ROLE_KEY dans .env.local.",
+    };
+  }
+
+  // 1. Suppression du compte Auth (le record `personnel` est cascade-supprimé
+  //    via la FK `personnel.id references auth.users(id) on delete cascade`).
+  const { error } = await admin.auth.admin.deleteUser(personnelId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin");
+  return { success: "Compte supprimé." };
 }
 

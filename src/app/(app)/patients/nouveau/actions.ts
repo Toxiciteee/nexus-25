@@ -24,6 +24,9 @@ export async function createPatient(
 ): Promise<CreatePatientState> {
   const personnel = await requirePersonnel();
 
+  // Pour la secrétaire (transverse) et le Chef de Service, l'unité est choisie
+  // dans le formulaire. Pour le Chef d'unité, l'unité est forcée à la sienne.
+  const uniteFromForm = formData.get("unite_id");
   const raw = {
     ini: formData.get("ini"),
     nom: formData.get("nom"),
@@ -32,8 +35,8 @@ export async function createPatient(
     ville_naissance: formData.get("ville_naissance") || null,
     sexe: formData.get("sexe") || null,
     unite_id:
-      personnel.role === "chef_service"
-        ? formData.get("unite_id")
+      personnel.role === "secretaire" || personnel.role === "chef_service"
+        ? uniteFromForm
         : personnel.unite_id,
   };
 
