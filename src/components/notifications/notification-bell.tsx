@@ -32,9 +32,12 @@ export function NotificationBell({ personnelId }: { personnelId: string }) {
     };
     void load();
 
-    // Souscription Realtime — les nouveaux INSERT pour ce destinataire
-    const channel = supabase
-      .channel(`notifications_${personnelId}`)
+    // Souscription Realtime — nouveaux INSERT pour ce destinataire.
+    // Nom de channel unique par mount pour éviter la réutilisation côté SDK
+    // (problématique en React StrictMode où useEffect monte deux fois).
+    const channelName = `notifications_${personnelId}_${(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2))}`;
+    const channel = supabase.channel(channelName);
+    channel
       .on(
         "postgres_changes",
         {
@@ -44,6 +47,7 @@ export function NotificationBell({ personnelId }: { personnelId: string }) {
           filter: `destinataire=eq.${personnelId}`,
         },
         (payload) => {
+          if (cancelled) return;
           setItems((prev) => [payload.new as Notification, ...prev].slice(0, 30));
         },
       )
