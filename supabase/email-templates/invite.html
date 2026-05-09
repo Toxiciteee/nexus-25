@@ -8,11 +8,19 @@
     4. Sujet recommandé : "Invitation — Service de Toxicologie CHU Constantine"
 
   Variables Supabase utilisées :
-    {{ .ConfirmationURL }}  → lien magique vers /auth/accept-invite
-    {{ .Email }}            → adresse e-mail du destinataire
-    {{ .Data.prenom }}      → prénom (passé via metadata `data:` dans l'invite)
-    {{ .Data.nom }}         → nom
-    {{ .Data.role }}        → "secretaire" ou "chef_unite"
+    {{ .SiteURL }}    → URL du site (Auth → URL Configuration)
+    {{ .TokenHash }}  → jeton à valider via /auth/confirm (clic humain requis)
+    {{ .Email }}      → adresse e-mail du destinataire
+    {{ .Data.prenom }} → prénom (passé via metadata `data:` dans l'invite)
+    {{ .Data.nom }}    → nom
+    {{ .Data.role }}   → "secretaire" ou "chef_unite"
+
+  ⚠ On n'utilise PAS {{ .ConfirmationURL }} : il pointe vers
+  /auth/v1/verify côté Supabase qui valide l'OTP automatiquement sur GET —
+  donc consommé par les scanners anti-phishing (Outlook/Defender,
+  Proofpoint…) avant que le destinataire clique. À la place, le lien
+  pointe vers notre page /auth/confirm qui ne valide l'OTP qu'au clic
+  explicite sur le bouton "Confirmer mon compte".
 -->
 <!doctype html>
 <html lang="fr">
@@ -138,7 +146,7 @@
             <tr>
               <td align="center" style="padding: 0 36px 28px 36px">
                 <a
-                  href="{{ .ConfirmationURL }}"
+                  href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/auth/accept-invite"
                   style="
                     display: inline-block;
                     background: #7e8a4f;
@@ -200,9 +208,9 @@
                   Si le bouton ne fonctionne pas, copiez et collez ce lien dans
                   votre navigateur&nbsp;:<br />
                   <a
-                    href="{{ .ConfirmationURL }}"
+                    href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/auth/accept-invite"
                     style="color: #5e6b3a; word-break: break-all;"
-                    >{{ .ConfirmationURL }}</a
+                    >{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/auth/accept-invite</a
                   >
                 </p>
               </td>
