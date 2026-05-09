@@ -23,6 +23,7 @@ export type Database = {
           interpretation_at: string | null;
           interpretation_par: string | null;
           numero: string | null;
+          observation: string | null;
           patient_id: string;
           resultats: Json;
           statut: Database["public"]["Enums"]["statut_analyse"];
@@ -46,6 +47,7 @@ export type Database = {
           interpretation_at?: string | null;
           interpretation_par?: string | null;
           numero?: string | null;
+          observation?: string | null;
           patient_id: string;
           resultats?: Json;
           statut?: Database["public"]["Enums"]["statut_analyse"];
@@ -69,6 +71,7 @@ export type Database = {
           interpretation_at?: string | null;
           interpretation_par?: string | null;
           numero?: string | null;
+          observation?: string | null;
           patient_id?: string;
           resultats?: Json;
           statut?: Database["public"]["Enums"]["statut_analyse"];

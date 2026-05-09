@@ -116,24 +116,45 @@ export default async function AnalyseDetailPage({
               analyse.unite_id === personnel.unite_id) && (
               <InterpretationPanel
                 analyseId={analyse.id}
-                initialValue={analyse.interpretation ?? ""}
+                initialObservation={analyse.observation ?? ""}
+                initialInterpretation={analyse.interpretation ?? ""}
               />
             )}
 
-          {/* Affichage en lecture seule de l'interprétation déjà saisie
+          {/* Affichage en lecture seule de l'observation + interprétation
               (pour les autres rôles ou statuts ultérieurs) */}
-          {analyse.interpretation && analyse.statut !== "attente_unite" && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Interprétation clinique</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                  {analyse.interpretation}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          {(analyse.observation || analyse.interpretation) &&
+            analyse.statut !== "attente_unite" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    Observation & Interprétation cliniques
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {analyse.observation && (
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-wide text-(--color-muted-foreground) mb-1">
+                        Observation
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                        {analyse.observation}
+                      </p>
+                    </div>
+                  )}
+                  {analyse.interpretation && (
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-wide text-(--color-muted-foreground) mb-1">
+                        Interprétation
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                        {analyse.interpretation}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
           <Card>
             <CardHeader>

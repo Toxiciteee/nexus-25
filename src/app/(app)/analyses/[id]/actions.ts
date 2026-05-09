@@ -57,14 +57,18 @@ export async function submitToChefUnite(
   return transition(analyseId, "brouillon", "attente_unite", ["secretaire"]);
 }
 
+export type InterpretationPayload = {
+  observation: string;
+  interpretation: string;
+};
+
 /**
- * Chef d'unité : saisit l'interprétation clinique ET valide en une seule
- * action (attente_unite → attente_chef). Atomique : si la mise à jour échoue,
- * le statut ne change pas.
+ * Chef d'unité : saisit l'observation + l'interprétation cliniques ET valide
+ * en une seule action (attente_unite → attente_chef). Atomique.
  */
 export async function validateChefUniteWithInterpretation(
   analyseId: string,
-  interpretation: string,
+  payload: InterpretationPayload,
 ): Promise<ActionResult> {
   const personnel = await requirePersonnel();
   const a = await loadAnalyse(analyseId);
@@ -78,8 +82,9 @@ export async function validateChefUniteWithInterpretation(
   if (personnel.role !== "chef_service" && a.unite_id !== personnel.unite_id) {
     return { error: "Cette analyse n'appartient pas à votre unité." };
   }
-  const trimmed = interpretation.trim();
-  if (trimmed.length < 5) {
+  const interpretation = payload.interpretation.trim();
+  const observation = payload.observation.trim();
+  if (interpretation.length < 5) {
     return {
       error:
         "L'interprétation clinique est obligatoire avant validation (5 caractères minimum).",
@@ -91,7 +96,8 @@ export async function validateChefUniteWithInterpretation(
   const { error } = await supabase
     .from("analyses")
     .update({
-      interpretation: trimmed,
+      observation: observation || null,
+      interpretation,
       interpretation_par: personnel.id,
       interpretation_at: now,
       statut: "attente_chef",
@@ -107,12 +113,13 @@ export async function validateChefUniteWithInterpretation(
 }
 
 /**
- * Variante "auto-save" de l'interprétation sans changer le statut.
- * Permet au Chef d'unité de sauvegarder son brouillon d'interprétation.
+ * Variante "auto-save" sans changer le statut.
+ * Permet au Chef d'unité de sauvegarder son brouillon (observation +
+ * interprétation).
  */
 export async function saveInterpretation(
   analyseId: string,
-  interpretation: string,
+  payload: InterpretationPayload,
 ): Promise<ActionResult> {
   const personnel = await requirePersonnel();
   const a = await loadAnalyse(analyseId);
@@ -130,7 +137,10 @@ export async function saveInterpretation(
   const supabase = await createClient();
   const { error } = await supabase
     .from("analyses")
-    .update({ interpretation: interpretation.trim() })
+    .update({
+      observation: payload.observation.trim() || null,
+      interpretation: payload.interpretation.trim() || null,
+    })
     .eq("id", analyseId);
   if (error) return { error: error.message };
 
