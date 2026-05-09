@@ -45,7 +45,17 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && pathname === "/login") {
+  // Si l'utilisateur est authentifié et arrive sur /login SANS query (cas
+  // normal), on le renvoie vers le dashboard. En revanche, si /login porte
+  // un paramètre `reason` ou `error` (ex: ?reason=inactive), on laisse passer
+  // la page de login afin qu'elle affiche le message — sinon on créerait une
+  // boucle de redirections quand le compte est désactivé.
+  if (
+    user &&
+    pathname === "/login" &&
+    !request.nextUrl.searchParams.has("reason") &&
+    !request.nextUrl.searchParams.has("error")
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
