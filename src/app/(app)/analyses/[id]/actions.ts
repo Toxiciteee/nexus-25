@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requirePersonnel } from "@/lib/auth/rbac";
 import type { StatutAnalyse, Json, Database } from "@/lib/database.types";
 
@@ -18,11 +19,14 @@ async function loadAnalyse(id: string) {
   return data;
 }
 
-/** Saisie/modification des résultats par la secrétaire (ou Chef de Service). */
+/** Saisie/modification des résultats par la secrétaire (transverse) ou Chef
+ *  de Service. La conclusion est réservée au Chef de Service : si le client
+ *  envoie `undefined`, on ne la modifie pas ; un appel non autorisé est
+ *  rejeté en silence. */
 export async function saveResultats(
   analyseId: string,
   resultats: Record<string, unknown>,
-  conclusion: string | null,
+  conclusion?: string | null,
 ): Promise<ActionResult> {
   const personnel = await requirePersonnel();
   const a = await loadAnalyse(analyseId);
@@ -33,14 +37,16 @@ export async function saveResultats(
   if (a.statut !== "brouillon") {
     return { error: "Les résultats ne peuvent être modifiés qu'en brouillon." };
   }
-  if (personnel.role === "secretaire" && a.unite_id !== personnel.unite_id) {
-    return { error: "Cette analyse n'appartient pas à votre unité." };
+
+  const updates: AnalyseUpdate = { resultats: resultats as unknown as Json };
+  if (conclusion !== undefined && personnel.role === "chef_service") {
+    updates.conclusion = conclusion;
   }
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("analyses")
-    .update({ resultats: resultats as unknown as Json, conclusion })
+    .update(updates)
     .eq("id", analyseId);
   if (error) return { error: error.message };
 
@@ -55,6 +61,66 @@ export async function submitToChefUnite(
   analyseId: string,
 ): Promise<ActionResult> {
   return transition(analyseId, "brouillon", "attente_unite", ["secretaire"]);
+}
+
+/**
+ * Secrétaire : envoie un rappel (notification) aux Chefs d'unité de l'unité
+ * de l'analyse — sans changer le statut. Utile quand l'analyse est déjà en
+ * `attente_unite` mais que la validation tarde. Le bouton reste disponible
+ * indépendamment de l'état "lecture seule" du formulaire des résultats.
+ */
+export async function notifyChefUnite(
+  analyseId: string,
+): Promise<ActionResult> {
+  const personnel = await requirePersonnel();
+  const a = await loadAnalyse(analyseId);
+  if (!a) return { error: "Analyse introuvable." };
+  if (
+    personnel.role !== "secretaire" &&
+    personnel.role !== "chef_service"
+  ) {
+    return { error: "Action réservée à la secrétaire." };
+  }
+  if (a.statut !== "attente_unite") {
+    return {
+      error: "Le rappel n'est utile que lorsque l'analyse attend la validation d'unité.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { data: analyseInfo } = await supabase
+    .from("analyses")
+    .select("numero")
+    .eq("id", analyseId)
+    .maybeSingle();
+  const numero = analyseInfo?.numero ?? analyseId.slice(0, 8);
+
+  const { data: chefs, error: chefsErr } = await supabase
+    .from("personnel")
+    .select("id")
+    .eq("role", "chef_unite")
+    .eq("unite_id", a.unite_id)
+    .eq("actif", true);
+  if (chefsErr) return { error: chefsErr.message };
+  if (!chefs || chefs.length === 0) {
+    return { error: "Aucun Chef d'unité actif trouvé pour cette unité." };
+  }
+
+  // Insertion via admin client : la RLS d'écriture sur `notifications` est
+  // typiquement réservée aux triggers/role admin. Le contrôle d'accès est
+  // déjà fait au-dessus (rôle + unité + statut).
+  const admin = createAdminClient();
+  const rows = chefs.map((c) => ({
+    destinataire: c.id,
+    analyse_id: analyseId,
+    type: "rappel_validation_unite",
+    titre: "Rappel : analyse en attente de validation",
+    message: `La secrétaire vous demande de valider l'analyse ${numero}.`,
+  }));
+  const { error: insErr } = await admin.from("notifications").insert(rows);
+  if (insErr) return { error: insErr.message };
+
+  return { success: "Rappel envoyé au Chef d'unité." };
 }
 
 export type InterpretationPayload = {
@@ -211,7 +277,13 @@ async function transition(
   ) {
     return { error: "Action non autorisée pour votre rôle." };
   }
-  if (personnel.role !== "chef_service" && a.unite_id !== personnel.unite_id) {
+  // La secrétaire est transverse — pas de cloisonnement par unité.
+  // Les autres rôles (chef_unite) restent restreints à leur propre unité.
+  if (
+    personnel.role !== "chef_service" &&
+    personnel.role !== "secretaire" &&
+    a.unite_id !== personnel.unite_id
+  ) {
     return { error: "Cette analyse n'appartient pas à votre unité." };
   }
 

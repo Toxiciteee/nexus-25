@@ -55,10 +55,11 @@ export default async function PatientDetailPage({
   };
   const analysesRows = (analyses ?? []) as unknown as AnalyseRow[];
 
-  const samUnite = patient.unite_id === personnel.unite_id;
+  // La secrétaire est transverse : elle peut créer une analyse pour
+  // n'importe quel patient, quelle que soit l'unité de rattachement
+  // (cohérent avec `createAnalyse` côté serveur).
   const canCreate =
-    personnel.role === "chef_service" ||
-    (personnel.role === "secretaire" && samUnite);
+    personnel.role === "chef_service" || personnel.role === "secretaire";
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
@@ -115,9 +116,17 @@ export default async function PatientDetailPage({
           </CardHeader>
           <CardContent>
             {analysesRows.length === 0 ? (
-              <p className="text-sm text-(--color-muted-foreground) py-8 text-center">
-                Aucune analyse enregistrée pour ce patient.
-              </p>
+              <div className="py-10 flex flex-col items-center gap-3 text-center">
+                <p className="text-sm text-(--color-muted-foreground)">
+                  Aucune analyse enregistrée pour ce patient.
+                </p>
+                {canCreate && (
+                  <LinkButton href={`/analyses/nouvelle?patient=${patient.id}`}>
+                    <Plus className="h-4 w-4" />
+                    Ajouter une analyse
+                  </LinkButton>
+                )}
+              </div>
             ) : (
               <Table>
                 <TableHeader>

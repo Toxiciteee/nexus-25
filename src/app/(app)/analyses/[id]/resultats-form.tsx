@@ -17,6 +17,7 @@ export function ResultatsForm({
   resultats,
   conclusion,
   canEdit,
+  canEditConclusion,
 }: {
   analyseId: string;
   uniteCode: string | null;
@@ -24,6 +25,9 @@ export function ResultatsForm({
   resultats: Record<string, unknown>;
   conclusion: string | null;
   canEdit: boolean;
+  /** La conclusion est rédigée par le Chef de Service uniquement
+   *  (interdite en écriture à la secrétaire et au Chef d'unité). */
+  canEditConclusion: boolean;
 }) {
   const schema = getSchemaForUnit(uniteCode);
   const [pending, startTransition] = useTransition();
@@ -35,7 +39,13 @@ export function ResultatsForm({
   const onSave = () =>
     startTransition(async () => {
       setError(null);
-      const r = await saveResultats(analyseId, values, conclusionValue || null);
+      // La conclusion n'est envoyée que par les rôles autorisés à la modifier
+      // (chef de service). Les autres rôles n'ont aucun contrôle dessus.
+      const r = await saveResultats(
+        analyseId,
+        values,
+        canEditConclusion ? conclusionValue || null : undefined,
+      );
       if (r.error) setError(r.error);
       if (r.success) setSavedAt(new Date());
     });
@@ -67,20 +77,23 @@ export function ResultatsForm({
         onChange={setValues}
       />
 
-      {/* Conclusion globale (séparée du resultats JSONB pour réutilisation PDF) */}
-      <div className="pt-4 border-t space-y-1.5">
-        <Label htmlFor="global-conclusion" className="text-sm font-semibold">
-          Conclusion globale
-        </Label>
-        <Textarea
-          id="global-conclusion"
-          value={conclusionValue}
-          onChange={(e) => setConclusionValue(e.target.value)}
-          rows={4}
-          disabled={readOnly}
-          placeholder="Synthèse, recommandations, observations cliniques…"
-        />
-      </div>
+      {/* Conclusion globale — rédigée par le Chef de Service uniquement.
+          Affichée en lecture seule pour les autres rôles si déjà saisie. */}
+      {(canEditConclusion || conclusionValue) && (
+        <div className="pt-4 border-t space-y-1.5">
+          <Label htmlFor="global-conclusion" className="text-sm font-semibold">
+            Conclusion globale
+          </Label>
+          <Textarea
+            id="global-conclusion"
+            value={conclusionValue}
+            onChange={(e) => setConclusionValue(e.target.value)}
+            rows={4}
+            disabled={!canEditConclusion}
+            placeholder="Synthèse, recommandations, observations cliniques…"
+          />
+        </div>
+      )}
 
       {canEdit && (
         <div className="flex items-center justify-between pt-2 sticky bottom-0 bg-(--color-card) border-t -mx-6 px-6 py-3">

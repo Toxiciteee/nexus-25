@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Send, ShieldCheck, Undo2, Trash2 } from "lucide-react";
+import { Send, ShieldCheck, Undo2, Trash2, Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import {
   submitToChefUnite,
+  notifyChefUnite,
   validateChefService,
   rejectAnalyse,
   deleteAnalyse,
@@ -43,7 +44,11 @@ export function WorkflowActions({
   const [success, setSuccess] = useState<string | null>(null);
 
   const isChef = personnelRole === "chef_service";
+  const isSecretaire = personnelRole === "secretaire";
   const sameUniteOrChef = isChef || isSameUnite;
+  // La secrétaire est transverse : elle peut transmettre / notifier sur
+  // n'importe quelle analyse, indépendamment de l'unité de rattachement.
+  const canActAsSecretaire = isChef || isSecretaire;
 
   const run = () => {
     if (!confirm) return;
@@ -70,11 +75,7 @@ export function WorkflowActions({
   // secrétaire ne peut plus modifier le rapport (par ex. champ verrouillé
   // côté UI), elle doit toujours pouvoir transmettre l'analyse au Chef
   // d'unité tant qu'elle est en brouillon dans son unité.
-  if (
-    statut === "brouillon" &&
-    (personnelRole === "secretaire" || isChef) &&
-    sameUniteOrChef
-  ) {
+  if (statut === "brouillon" && canActAsSecretaire) {
     buttons.push(
       <Button
         key="submit"
@@ -94,6 +95,34 @@ export function WorkflowActions({
       >
         <Send className="h-4 w-4" />
         Envoyer au Chef d'unité
+      </Button>,
+    );
+  }
+
+  // En attente_unite : la secrétaire conserve le droit d'envoyer un rappel
+  // au Chef d'unité (action de notification, indépendante de l'état "lecture
+  // seule" du formulaire).
+  if (statut === "attente_unite" && canActAsSecretaire) {
+    buttons.push(
+      <Button
+        key="notify"
+        onClick={() =>
+          setConfirm({
+            fn: () => notifyChefUnite(analyseId),
+            title: "Notifier le Chef d'unité ?",
+            description:
+              "Un rappel sera envoyé au(x) Chef(s) d'unité pour leur signaler que cette analyse attend leur validation.",
+            confirmLabel: "Envoyer le rappel",
+            tone: "default",
+            icon: <Bell className="h-5 w-5" />,
+          })
+        }
+        disabled={pending}
+        variant="outline"
+        className="w-full"
+      >
+        <Bell className="h-4 w-4" />
+        Notifier le Chef d'unité
       </Button>,
     );
   }

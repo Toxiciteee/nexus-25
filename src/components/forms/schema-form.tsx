@@ -24,11 +24,9 @@ export function SchemaForm({
   const [values, setValues] = useState<FormValues>(initial);
 
   const update = (updater: (prev: FormValues) => FormValues) => {
-    setValues((prev) => {
-      const next = updater(prev);
-      onChange?.(next);
-      return next;
-    });
+    const next = updater(values);
+    setValues(next);
+    onChange?.(next);
   };
 
   const setKey = (key: string, value: unknown) =>

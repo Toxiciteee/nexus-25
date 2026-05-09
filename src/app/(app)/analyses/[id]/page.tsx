@@ -169,10 +169,10 @@ export default async function AnalyseDetailPage({
                 conclusion={analyse.conclusion}
                 canEdit={
                   analyse.statut === "brouillon" &&
-                  (personnel.role === "secretaire" || personnel.role === "chef_service") &&
-                  (personnel.role === "chef_service" ||
-                    analyse.unite_id === personnel.unite_id)
+                  (personnel.role === "secretaire" ||
+                    personnel.role === "chef_service")
                 }
+                canEditConclusion={personnel.role === "chef_service"}
               />
             </CardContent>
           </Card>
