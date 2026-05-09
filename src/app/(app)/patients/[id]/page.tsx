@@ -79,9 +79,9 @@ export default async function PatientDetailPage({
           </div>
         </div>
         {canCreate && (
-          <LinkButton href={`/analyses/nouvelle?patient=${patient.id}`}>
+          <LinkButton href={`/analyses/nouvelle?patient=${patient.id}`} size="lg">
             <Plus className="h-4 w-4" />
-            Nouvelle analyse
+            Ajouter une analyse
           </LinkButton>
         )}
       </div>

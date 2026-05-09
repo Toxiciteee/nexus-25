@@ -12,8 +12,8 @@ import {
 } from "./actions";
 
 /**
- * Panneau dédié au Chef d'unité : saisie de l'interprétation clinique +
- * un seul bouton de validation qui transmet au Chef de Service.
+ * Panneau dédié au Chef d'unité : saisie de l'observation + l'interprétation
+ * cliniques + un seul bouton de validation qui transmet au Chef de Service.
  *
  * S'affiche UNIQUEMENT si :
  *   - statut === "attente_unite"
@@ -22,23 +22,31 @@ import {
  */
 export function InterpretationPanel({
   analyseId,
-  initialValue,
+  initialObservation,
+  initialInterpretation,
 }: {
   analyseId: string;
-  initialValue: string;
+  initialObservation: string;
+  initialInterpretation: string;
 }) {
-  const [value, setValue] = useState(initialValue);
+  const [observation, setObservation] = useState(initialObservation);
+  const [interpretation, setInterpretation] = useState(initialInterpretation);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const dirty = value.trim() !== initialValue.trim();
+  const dirty =
+    observation.trim() !== initialObservation.trim() ||
+    interpretation.trim() !== initialInterpretation.trim();
 
   const onSaveDraft = () =>
     start(async () => {
       setError(null);
-      const r = await saveInterpretation(analyseId, value);
+      const r = await saveInterpretation(analyseId, {
+        observation,
+        interpretation,
+      });
       if (r.error) setError(r.error);
       else setSavedAt(new Date());
     });
@@ -46,13 +54,17 @@ export function InterpretationPanel({
   const onValidate = () =>
     start(async () => {
       setError(null);
-      const r = await validateChefUniteWithInterpretation(analyseId, value);
+      const r = await validateChefUniteWithInterpretation(analyseId, {
+        observation,
+        interpretation,
+      });
       if (r.error) {
         setError(r.error);
         setConfirmOpen(false);
       }
-      // Sur succès : redirect/refresh viendra par revalidatePath du serveur
     });
+
+  const interpretationLen = interpretation.trim().length;
 
   return (
     <div className="space-y-4 rounded-xl border-2 border-(--color-primary)/30 bg-(--color-primary-50)/40 p-5">
@@ -62,32 +74,49 @@ export function InterpretationPanel({
         </div>
         <div>
           <h3 className="text-sm font-semibold text-(--color-foreground)">
-            Interprétation clinique
+            Observation & Interprétation cliniques
           </h3>
           <p className="text-xs text-(--color-muted-foreground)">
-            Rédigez votre lecture des résultats avant de transmettre au Chef de Service.
+            Réservé au Chef d&apos;unité — à compléter avant transmission au Chef de Service.
           </p>
         </div>
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="interpretation" className="sr-only">
-          Interprétation clinique
+        <Label htmlFor="observation" className="text-sm font-semibold">
+          Observation
+        </Label>
+        <Textarea
+          id="observation"
+          value={observation}
+          onChange={(e) => {
+            setObservation(e.target.value);
+            setSavedAt(null);
+          }}
+          rows={4}
+          placeholder="Observations cliniques contextuelles, éléments techniques notables…"
+          className="bg-(--color-card) min-h-[100px] leading-relaxed"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="interpretation" className="text-sm font-semibold">
+          Interprétation clinique <span className="text-(--color-destructive)">*</span>
         </Label>
         <Textarea
           id="interpretation"
-          value={value}
+          value={interpretation}
           onChange={(e) => {
-            setValue(e.target.value);
+            setInterpretation(e.target.value);
             setSavedAt(null);
           }}
           rows={8}
-          placeholder="Synthèse clinique : pertinence des résultats, recommandations diagnostiques, observations contextuelles, mise en perspective avec le contexte du patient…"
+          placeholder="Synthèse clinique : pertinence des résultats, recommandations diagnostiques, mise en perspective avec le contexte du patient…"
           className="bg-(--color-card) min-h-[180px] leading-relaxed"
         />
         <div className="flex items-center justify-between text-xs">
           <span className="text-(--color-muted-foreground)">
-            {value.trim().length} caractère{value.trim().length > 1 ? "s" : ""}
+            {interpretationLen} caractère{interpretationLen > 1 ? "s" : ""}
           </span>
           {savedAt && (
             <span className="text-(--color-success) inline-flex items-center gap-1">
@@ -116,7 +145,7 @@ export function InterpretationPanel({
         </Button>
         <Button
           onClick={() => {
-            if (value.trim().length < 5) {
+            if (interpretationLen < 5) {
               setError(
                 "L'interprétation clinique est obligatoire avant validation (5 caractères minimum).",
               );

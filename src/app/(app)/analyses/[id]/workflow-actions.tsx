@@ -64,7 +64,12 @@ export function WorkflowActions({
 
   const buttons: React.ReactNode[] = [];
 
-  // Secrétaire / Chef Service en brouillon → soumettre à Chef d'unité
+  // Secrétaire / Chef Service en brouillon → soumettre à Chef d'unité.
+  // NB: la visibilité de ce bouton est volontairement indépendante de
+  // l'état "lecture seule" du formulaire des résultats. Même si la
+  // secrétaire ne peut plus modifier le rapport (par ex. champ verrouillé
+  // côté UI), elle doit toujours pouvoir transmettre l'analyse au Chef
+  // d'unité tant qu'elle est en brouillon dans son unité.
   if (
     statut === "brouillon" &&
     (personnelRole === "secretaire" || isChef) &&

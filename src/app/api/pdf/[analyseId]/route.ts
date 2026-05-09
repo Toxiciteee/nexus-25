@@ -68,6 +68,7 @@ type AnalyseFull = {
   statut: string;
   date_prelevement: string | null;
   conclusion: string | null;
+  observation: string | null;
   interpretation: string | null;
   valide_unite_at: string | null;
   valide_chef_at: string | null;
@@ -316,6 +317,12 @@ function renderReport({
 </div>
 
 ${schema.sections.map((s) => renderSection(s, resultats)).join("")}
+
+${
+  analyse.observation
+    ? `<h3 class="section">Observation (Chef d'unité)</h3><div class="conclusion">${escape(analyse.observation)}</div>`
+    : ""
+}
 
 ${
   analyse.interpretation
